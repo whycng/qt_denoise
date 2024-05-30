@@ -52,16 +52,19 @@ void Normalize2DVector(std::vector<std::vector<float>>& data) {
 
 //绘图函数
 void plot_den(const std::vector<std::vector<float>>& outData,QHBoxLayout* hLayout
-              ,const float& vmax, const float& vmin)
+              ,const float& vmax, const float& vmin
+              ,QCustomPlot* customPlot_den)
 {
     if( true == outData.empty())
     {
         qDebug() << " EMPTY oudata";
         return;
     }
+
+
     const int row = outData.size();
     const int col = outData.at(0).size();
-    QCustomPlot* customPlot_den = new QCustomPlot();
+
     QCPColorMap* colorMap = new QCPColorMap(customPlot_den->xAxis, customPlot_den->yAxis);
 
     colorMap->data()->setSize(row, col);
@@ -92,18 +95,7 @@ void plot_den(const std::vector<std::vector<float>>& outData,QHBoxLayout* hLayou
     //交互方式
     customPlot_den->setInteractions(QCP::iRangeDrag | QCP::iRangeZoom);
 
-    //布局设置
-    // 检查g_custLayout_priWell中是否存在小部件
-    QLayoutItem* existingItem = hLayout->takeAt(0);
-    if (existingItem) {
-        QWidget* existingWidget = existingItem->widget();
-        if (existingWidget) {
-            // 删除已存在的小部件
-            delete existingWidget;
-        }
-        delete existingItem;
-    }
-    hLayout->addWidget(customPlot_den);
+
 }
 
 
