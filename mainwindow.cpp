@@ -19,6 +19,8 @@ MainWindow::MainWindow(QWidget *parent)
     // 初始默认值
     ui->lineEdit_vmax->setText("0.8");
     ui->lineEdit_vmin->setText("0.2");
+    ui->lineEdit_threshold->setText("0.1");
+    ui->lineEdit_radius->setText("0.5");
     m_radius = 10;
 
     //qcustomplot框
@@ -26,10 +28,19 @@ MainWindow::MainWindow(QWidget *parent)
     m_customPlot_den = new QCustomPlot();
 
     //限定输入为0-1之内的浮点数
-    QDoubleValidator *validator = new QDoubleValidator(0.0, 1.0, 6, this);
-    validator->setNotation(QDoubleValidator::StandardNotation);
-    ui->lineEdit_vmax->setValidator(validator);
-    ui->lineEdit_vmin->setValidator(validator);
+    QDoubleValidator *validator1 = new QDoubleValidator(0.0, 1.0, 6, this);
+    validator1->setNotation(QDoubleValidator::StandardNotation);
+    ui->lineEdit_vmax->setValidator(validator1);
+    ui->lineEdit_vmin->setValidator(validator1);
+    ui->lineEdit_threshold->setValidator(validator1);
+
+    // 创建一个 QDoubleValidator 对象
+    QDoubleValidator *validator2 = new QDoubleValidator(0.0, std::numeric_limits<double>::max(), 2, this);
+    // 设置验证器的属性
+    validator2->setNotation(QDoubleValidator::StandardNotation);  // 标准表示法
+    validator2->setDecimals(2);  // 设置小数点后的位数
+    // 将验证器应用到 QLineEdit
+    ui->lineEdit_radius->setValidator(validator2);
 
 //    // Enable mouse tracking to capture move events even when no button is pressed
 //    m_customPlot_den->setMouseTracking(true);
@@ -49,45 +60,84 @@ MainWindow::~MainWindow()
     delete ui;
 }
 
-void MainWindow::denoiseDataInCircle() {
-    QVector<double> x = m_customPlot_den->graph(0)->data()->keys().toVector();
-    QVector<double> y = m_customPlot_den->graph(0)->data()->values().toVector();
-    QPointF center = m_customPlot_den->plotArea().topLeft() + QPointF(m_mousePos.x(), m_mousePos.y());
-    double centerX = m_customPlot_den->xAxis->pixelToCoord(center.x());
-    double centerY = m_customPlot_den->yAxis->pixelToCoord(center.y());
+//交互去噪
+void MainWindow::denoiseDataInCircle(QPoint mousePos) {
 
-    // 参数化的平滑范围
-    int smoothingRange = 2;  // 可调整的平滑范围
-    int range = 5; // 可调整的范围大小
+    const float vmax = ui->lineEdit_vmax->text().toFloat();
+    const float vmin = ui->lineEdit_vmin->text().toFloat();
+    const float radius = ui->lineEdit_radius->text().toFloat();
+    const float threshold = ui->lineEdit_threshold->text().toFloat();
 
-    // 用于存储平滑后的数据
-    QVector<double> smoothedY(y.size());
+    // 将鼠标像素坐标转换为轴坐标
+    double xCoord = m_customPlot_den->xAxis->pixelToCoord(mousePos.x());
+    double yCoord = m_customPlot_den->yAxis->pixelToCoord(mousePos.y());
 
-    // 使用滑动窗口算法进行平滑处理
-    double sum = 0;
-    int windowSize = 2 * smoothingRange + 1;
+    // 收集选中数据点的值及其索引
+    std::vector<std::pair<int, int>> indices;
+    std::vector<float> values;
 
-    // 初始化滑动窗口的总和
-    for (int i = 0; i < windowSize && i < y.size(); ++i) {
-        sum += y[i];
+    const int row = m_outPutData.size();
+    const int col = m_outPutData.at(0).size();
+
+    // 获取ColorMap的实际尺寸范围
+    double xMin = m_customPlot_den->xAxis->range().lower;
+    double xMax = m_customPlot_den->xAxis->range().upper;
+    double yMin = m_customPlot_den->yAxis->range().lower;
+    double yMax = m_customPlot_den->yAxis->range().upper;
+
+    double xStep = (xMax - xMin) / (row - 1);
+    double yStep = (yMax - yMin) / (col - 1);
+
+    // 遍历m_outPutData，找到在指定范围内的数据点
+    for(int i = 0; i < row; ++i) {
+        for(int j = 0; j < col; ++j) {
+            double dataX = xMin + i * xStep;
+            double dataY = yMin + j * yStep;
+
+            // 计算距离
+            double distance = std::sqrt(std::pow(dataX - xCoord, 2) + std::pow(dataY - yCoord, 2));
+
+            if(distance <= radius) {
+                indices.push_back(std::make_pair(i, j));
+                values.push_back(m_outPutData[i][j]);
+            }
+        }
     }
 
-    // 遍历数据点进行平滑处理
-    for (int i = 0; i < y.size(); ++i) {
-        if (i > smoothingRange) {
-            sum -= y[i - smoothingRange - 1];
-        }
-        if (i + smoothingRange < y.size()) {
-            sum += y[i + smoothingRange];
-        }
 
-        smoothedY[i] = sum / std::min(windowSize, i + smoothingRange + 1) - std::max(0, i - smoothingRange);
+    // 添加新的元素到容器尾部
+    g_recentVal.push_back({indices,values});
+
+
+    // 按值降序排列
+    std::vector<size_t> indicesSorted(values.size());
+    std::iota(indicesSorted.begin(), indicesSorted.end(), 0);
+    std::sort(indicesSorted.begin(), indicesSorted.end(), [&values](size_t a, size_t b) {
+        return values[a] > values[b];
+    });
+
+    // 选择前10%以及后10%的数据点作为噪点
+    size_t numNoisePoints = indicesSorted.size() * threshold;//0.1
+    qDebug() << " 阈值个数 numNoisePoints:" << numNoisePoints << " 总数 indicesSorted.size():"
+             << indicesSorted.size();
+    int sum_test = 0;
+    //for (size_t k = numNoisePoints; k < indicesSorted.size(); ++k) {
+    for (size_t k = 0; k < indicesSorted.size(); ++k) {
+        if( k >= numNoisePoints && k <= indicesSorted.size() - numNoisePoints)
+            continue;
+        ++sum_test;
+
+        int i = indices[indicesSorted[k]].first;
+        int j = indices[indicesSorted[k]].second;
+        m_outPutData[i][j] = 0.5;
     }
+    qDebug() << "去除噪点 sum_test:" << sum_test;
 
-    // 更新图表数据
-    m_customPlot_den->graph(0)->setData(x, smoothedY);
-    m_customPlot_den->replot();
+    // 刷新QCustomPlot以显示更新后的数据
+    //plot_den(m_outPutData,hLayout,vmax,vmin,m_customPlot_den);
+
 }
+
 void MainWindow::updateRedCircle() {
     //    if (!m_customPlot_den->viewport().contains(m_mousePos)) {
     //        m_circle->setVisible(false);
@@ -109,6 +159,7 @@ void MainWindow::onMousePress(QMouseEvent *event) {
         m_selecting = true;
         m_startPoint = event->pos();
         m_endPoint = m_startPoint;
+        //denoiseDataInCircle(event->pos());
         //qDebug() << "<onMousePress> m_startPoint:" << m_startPoint;
     }
 }
@@ -122,8 +173,9 @@ void MainWindow::onMouseMove(QMouseEvent *event) {
 
         // Update mouse position and redraw the red circle
         m_mousePos = event->pos();
-        //updateRedCircle();
-        m_customPlot_den->replot(); // Trigger replot to update the plot
+        //updateRedCircle(); --bug
+        denoiseDataInCircle(event->pos());
+        //m_customPlot_den->replot(); // Trigger replot to update the plot
     }
 }
 
@@ -134,9 +186,26 @@ void MainWindow::onMouseRelease(QMouseEvent *event) {
         m_selecting = false;
         m_endPoint = event->pos();
         //performDenoising();
-        m_customPlot_den->replot();
+        //m_customPlot_den->replot();
+        const float vmax = ui->lineEdit_vmax->text().toFloat();
+        const float vmin = ui->lineEdit_vmin->text().toFloat();
+
+
+        qDebug() << " g_recentVal size:" << g_recentVal.size();
+        g_BackVal.push_back(g_recentVal);
+        if (g_BackVal.size() == 20)
+        {
+            g_BackVal.pop_back();
+        }
+        g_recentVal.clear();
+        qDebug() << "PUSH_BACK g_BackVal size:" << g_BackVal.size();
+
+
+
+
+        plot_den(m_outPutData,hLayout,vmax,vmin,m_customPlot_den);
         //qDebug() << "<onMouseRelease> m_endPoint:" << m_endPoint;
-        //m_customPlot_den->setCurrentLayer("main");
+        m_customPlot_den->setCurrentLayer("main");
     }
 }
 
@@ -245,10 +314,49 @@ void MainWindow::on_pushButton_denoisePrc_clicked()
     //m_customPlot_den->setCurrentLayer("main");
     //绘制
     plot_den(outPutData,hLayout,vmax,vmin,m_customPlot_den);
+    m_outPutData = outPutData;
 
     QObject::connect(m_customPlot_den, &QCustomPlot::mousePress, this, &MainWindow::onMousePress);
     QObject::connect(m_customPlot_den, &QCustomPlot::mouseMove, this, &MainWindow::onMouseMove);
     QObject::connect(m_customPlot_den, &QCustomPlot::mouseRelease, this, &MainWindow::onMouseRelease);
 }
 
+
+//上一步
+void MainWindow::on_pushButton_back_clicked()
+{
+    if( m_customPlot_den == nullptr)
+        return;
+    if (g_BackVal.size() < 1) {
+        qDebug() << "Not enough elements to get the previous value";
+        return;
+        //throw std::out_of_range("Not enough elements to get the previous value");
+    }
+    qDebug() << "eee0 g_BackVal.size():" << g_BackVal.size();
+
+    // 返回新的最后一个元素
+    std::vector<RecentGraphChangedValue> rval = g_BackVal.back();
+    //此处需要遵循顺序依次还原
+    //for( int j = 0 ; j < rval.size(); ++j)
+    for( int j = rval.size()-1; j >= 0; --j)
+    {
+        //此处遍历每个点，顺序无所谓
+        for( int i = 0 ; i < rval.at(j).values.size(); ++i)
+        //for( int i = rval.at(j).values.size()-1 ; i >= 0; --i)
+        {
+            const int index_i = rval.at(j).indices.at(i).first;
+            const int index_j = rval.at(j).indices.at(i).second;
+            m_outPutData[index_i][index_j] = rval.at(j).values.at(i);
+        }
+    }
+
+    const float vmax = ui->lineEdit_vmax->text().toFloat();
+    const float vmin = ui->lineEdit_vmin->text().toFloat();
+
+    plot_den(m_outPutData,hLayout,vmax,vmin,m_customPlot_den);
+
+    // 移除最后一个元素
+    g_BackVal.pop_back();
+
+}
 

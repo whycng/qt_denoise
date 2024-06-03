@@ -26,6 +26,15 @@ int main(int argc, char *argv[])
 //            break;
 //        }
 //    }
+
+//    std::deque<int> tt;
+//    // 添加新的元素到容器尾部
+//    tt.push_back(1);
+//    if (tt.size() == 10) {
+//        tt.pop_front();
+//    }
+//    qDebug() << " PUSH --  g_recentVal:" << tt.size();
+
     MainWindow w;
     w.show();
 
