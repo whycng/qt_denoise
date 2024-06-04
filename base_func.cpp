@@ -52,8 +52,8 @@ void Normalize2DVector(std::vector<std::vector<float>>& data) {
 
 //绘图函数
 void plot_den(const std::vector<std::vector<float>>& outData,QHBoxLayout* hLayout
-              ,const float& vmax, const float& vmin
-              ,QCustomPlot* customPlot_den)
+                          ,const float& vmax, const float& vmin
+                          ,QCustomPlot* customPlot_den )
 {
     if( true == outData.empty())
     {
@@ -93,10 +93,11 @@ void plot_den(const std::vector<std::vector<float>>& outData,QHBoxLayout* hLayou
     customPlot_den->replot();
 
     //交互方式
-    //customPlot_den->setInteractions(QCP::iRangeDrag | QCP::iRangeZoom);
+    customPlot_den->setInteractions(QCP::iRangeDrag | QCP::iRangeZoom);
 
 
 }
+
 
 
 // 辅助函数：将枚举值转换为相应的字符串

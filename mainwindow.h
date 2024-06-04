@@ -30,19 +30,65 @@ public:
 
     QHBoxLayout* hLayout = nullptr;
     QCustomPlot* m_customPlot_den = nullptr;
+    QCPColorMap* m_colorMap;
     //double g_threshold ;
     //double g_radius ;
+
+
 
 private:
     void updateRedCircle() ;
     void denoiseDataInCircle(QPoint mousePos);
 private slots:
+
+    /*void onXAxisRangeChanged(double lower, double upper)
+    {
+        m_xoffset = m_xrangeLow - lower;
+        // 输出当前 x 轴范围
+        qDebug() << "X axis range changed: [" << lower << ", " << upper << "]"
+                 << " m_xoffset:" << m_xoffset;
+
+        // 更新当前范围值
+        m_xrangeLow = lower;
+    }
+
+    void onYAxisRangeChanged(double lower, double upper)
+    {
+        m_yoffset = m_yrangeLow - lower;
+        // 输出当前 y 轴范围
+        qDebug() << "Y axis range changed: [" << lower << ", " << upper << "]"
+                 << " m_yoffset:" << m_yoffset;
+
+        // 更新当前范围值
+        m_yrangeLow = lower;
+    }*/
+
+    void onXAxisRangeChanged(const QCPRange &newRange)
+    {
+        double xLower = newRange.lower;
+        m_xoffset = m_xrangeLow - xLower;
+        // 输出当前 x 轴范围
+        //qDebug() << "X axis range changed: [" << xLower << ", " << xUpper << "]"
+        //         << " m_xoffset:" << m_xoffset;
+    }
+
+    void onYAxisRangeChanged(const QCPRange &newRange)
+    {
+        double yLower = newRange.lower;
+        m_yoffset = m_yrangeLow - yLower;
+        // 输出当前 y 轴范围
+        qDebug() << "Y axis range changed: [" << yLower << ", "   << "]"
+                 << " m_yoffset:" << m_yoffset;
+    }
+
     void on_pushButton_readData_clicked();
 
     void on_pushButton_denoisePrc_clicked();
 
     void on_pushButton_back_clicked();
-
+signals:
+    //void xAxisChanged(double dx, double dy);
+    //void yAxisChanged(double dx, double dy);
 private:
     Ui::MainWindow *ui;
 
@@ -59,6 +105,12 @@ private:
     std::vector<RecentGraphChangedValue> g_recentVal;
     std::vector<std::vector<RecentGraphChangedValue>> g_BackVal;
     //int m_nowStep;
+    double m_xrange;
+    double m_yrange;
+    double m_xrangeLow;
+    double m_yrangeLow;
+    double m_xoffset;
+    double m_yoffset;
 
 };
 #endif // MAINWINDOW_H

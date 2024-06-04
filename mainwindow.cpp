@@ -65,12 +65,13 @@ void MainWindow::denoiseDataInCircle(QPoint mousePos) {
 
     const float vmax = ui->lineEdit_vmax->text().toFloat();
     const float vmin = ui->lineEdit_vmin->text().toFloat();
-    const float radius = ui->lineEdit_radius->text().toFloat();
     const float threshold = ui->lineEdit_threshold->text().toFloat();
 
     // 将鼠标像素坐标转换为轴坐标
     double xCoord = m_customPlot_den->xAxis->pixelToCoord(mousePos.x());
     double yCoord = m_customPlot_den->yAxis->pixelToCoord(mousePos.y());
+
+    qDebug() << " xCoord:" << xCoord << " yCoord:" << yCoord;
 
     // 收集选中数据点的值及其索引
     std::vector<std::pair<int, int>> indices;
@@ -80,24 +81,58 @@ void MainWindow::denoiseDataInCircle(QPoint mousePos) {
     const int col = m_outPutData.at(0).size();
 
     // 获取ColorMap的实际尺寸范围
-    double xMin = m_customPlot_den->xAxis->range().lower;
-    double xMax = m_customPlot_den->xAxis->range().upper;
-    double yMin = m_customPlot_den->yAxis->range().lower;
-    double yMax = m_customPlot_den->yAxis->range().upper;
+    const double xMin = m_customPlot_den->xAxis->range().lower;
+    const double xMax = m_customPlot_den->xAxis->range().upper;
+    const double yMin = m_customPlot_den->yAxis->range().lower;
+    const double yMax = m_customPlot_den->yAxis->range().upper;
+    const double xrange = m_customPlot_den->xAxis->range().size();
 
-    double xStep = (xMax - xMin) / (row - 1);
-    double yStep = (yMax - yMin) / (col - 1);
+    const double xStep = (xMax - xMin) / (row - 1);
+    const double yStep = (yMax - yMin) / (col - 1);
+
+    const double scaleX = xrange/m_xrange;
+    const float radius = ui->lineEdit_radius->text().toFloat() * scaleX;
+
+    qDebug() << " xMin:" << xMin << " xMax:" << xMax << " xStep:" << xStep;
+
+//    if (!m_colorMap) {
+//        qDebug() << "colorMap is not initialized.";
+//        return;
+//    }
+
+//    QCPColorMapData* data = m_colorMap->data();
+//    for (int xIndex = 0; xIndex < data->keySize(); ++xIndex) {
+//        for (int yIndex = 0; yIndex < data->valueSize(); ++yIndex) {
+//            double x, y;
+//            data->cellToCoord(xIndex, yIndex, &x, &y);
+//            //double value = data->cell(xIndex, yIndex);
+//            // 计算距离
+//            double distance = std::sqrt(std::pow(x - xCoord, 2) + std::pow(y - yCoord, 2));
+
+//            if(distance <= radius) {
+//                indices.push_back(std::make_pair(xIndex, yIndex));
+//                values.push_back(m_outPutData[xIndex][yIndex]);
+//            }
+//            //qDebug() << "Point (" << x << "," << y << ") has value:" << value;
+//        }
+//    }
 
     // 遍历m_outPutData，找到在指定范围内的数据点
     for(int i = 0; i < row; ++i) {
         for(int j = 0; j < col; ++j) {
-            double dataX = xMin + i * xStep;
-            double dataY = yMin + j * yStep;
+            double dataX = xMin + i * xStep + m_xoffset;
+            double dataY = yMin + j * yStep + m_yoffset;
+            //double dataX = m_customPlot_den->xAxis->coordToPixel(xMin + i * xStep);
+            //double dataY = m_customPlot_den->yAxis->coordToPixel(yMin + j * yStep);
+
+            //qDebug() << " dataX:" << dataX << " dataX2:" << dataX2;
 
             // 计算距离
             double distance = std::sqrt(std::pow(dataX - xCoord, 2) + std::pow(dataY - yCoord, 2));
 
             if(distance <= radius) {
+                //qDebug() << "dataX:" << dataX <<" xCoord:" << xCoord
+                //         << " dataY:" << dataY << " yCoord:" << yCoord;
                 indices.push_back(std::make_pair(i, j));
                 values.push_back(m_outPutData[i][j]);
             }
@@ -118,8 +153,8 @@ void MainWindow::denoiseDataInCircle(QPoint mousePos) {
 
     // 选择前10%以及后10%的数据点作为噪点
     size_t numNoisePoints = indicesSorted.size() * threshold;//0.1
-    qDebug() << " 阈值个数 numNoisePoints:" << numNoisePoints << " 总数 indicesSorted.size():"
-             << indicesSorted.size();
+    //qDebug() << " 阈值个数 numNoisePoints:" << numNoisePoints << " 总数 indicesSorted.size():"
+    //         << indicesSorted.size();
     int sum_test = 0;
     //for (size_t k = numNoisePoints; k < indicesSorted.size(); ++k) {
     for (size_t k = 0; k < indicesSorted.size(); ++k) {
@@ -131,7 +166,7 @@ void MainWindow::denoiseDataInCircle(QPoint mousePos) {
         int j = indices[indicesSorted[k]].second;
         m_outPutData[i][j] = 0.5;
     }
-    qDebug() << "去除噪点 sum_test:" << sum_test;
+    //qDebug() << "去除噪点 sum_test:" << sum_test;
 
     // 刷新QCustomPlot以显示更新后的数据
     //plot_den(m_outPutData,hLayout,vmax,vmin,m_customPlot_den);
@@ -169,7 +204,7 @@ void MainWindow::onMouseMove(QMouseEvent *event) {
     if (m_selecting && event->buttons() & Qt::RightButton) {
         m_endPoint = event->pos();
         //m_customPlot_den->replot();
-        //qDebug() << "<onMouseMove> m_endPoint:" << m_endPoint;
+        qDebug() << "<onMouseMove> m_endPoint:" << m_endPoint;
 
         // Update mouse position and redraw the red circle
         m_mousePos = event->pos();
@@ -190,8 +225,7 @@ void MainWindow::onMouseRelease(QMouseEvent *event) {
         const float vmax = ui->lineEdit_vmax->text().toFloat();
         const float vmin = ui->lineEdit_vmin->text().toFloat();
 
-
-        qDebug() << " g_recentVal size:" << g_recentVal.size();
+        qDebug() << "onMouseRelease g_recentVal size:" << g_recentVal.size();
         g_BackVal.push_back(g_recentVal);
         if (g_BackVal.size() == 20)
         {
@@ -201,10 +235,31 @@ void MainWindow::onMouseRelease(QMouseEvent *event) {
         qDebug() << "PUSH_BACK g_BackVal size:" << g_BackVal.size();
 
 
+        //问题来了，放入plot_den？--tmp
+        //先生成一个新的m_customPlot_den，再填入hLayout
+//        if( nullptr != m_customPlot_den)
+//        {
+//            delete m_customPlot_den;
+//            m_customPlot_den = nullptr;
+//        }
+//        m_customPlot_den = new QCustomPlot();
+//        //布局设置
+//        // 检查g_custLayout_priWell中是否存在小部件
+//        QLayoutItem* existingItem = hLayout->takeAt(0);
+//        if (existingItem) {
+//            QWidget* existingWidget = existingItem->widget();
+//            if (existingWidget) {
+//                // 删除已存在的小部件
+//                delete existingWidget;
+//            }
+//            delete existingItem;
+//        }
+//        hLayout->addWidget(m_customPlot_den);
 
 
-        plot_den(m_outPutData,hLayout,vmax,vmin,m_customPlot_den);
-        //qDebug() << "<onMouseRelease> m_endPoint:" << m_endPoint;
+
+        plot_den(m_outPutData,hLayout,vmax,vmin,m_customPlot_den );
+        qDebug() << "<onMouseRelease> shi fang wan bi m_endPoint:" << m_endPoint;
         m_customPlot_den->setCurrentLayer("main");
     }
 }
@@ -313,12 +368,33 @@ void MainWindow::on_pushButton_denoisePrc_clicked()
     //用鼠标按下和释放去控制回到main层
     //m_customPlot_den->setCurrentLayer("main");
     //绘制
-    plot_den(outPutData,hLayout,vmax,vmin,m_customPlot_den);
+    plot_den(outPutData,hLayout,vmax,vmin,m_customPlot_den );
     m_outPutData = outPutData;
+    //记录当前尺寸
+    // 获取ColorMap的实际尺寸范围
+    m_xrange = m_customPlot_den->xAxis->range().size();
+    m_yrange = m_customPlot_den->yAxis->range().size();
+    qDebug() << " m_xrange:" << m_xrange << " m_yrange:" << m_yrange;
+    //获取当前坐标
+//    m_xrangeLow = m_customPlot_den->xAxis->range().lower;
+//    m_yrangeLow = m_customPlot_den->yAxis->range().lower;
 
     QObject::connect(m_customPlot_den, &QCustomPlot::mousePress, this, &MainWindow::onMousePress);
     QObject::connect(m_customPlot_den, &QCustomPlot::mouseMove, this, &MainWindow::onMouseMove);
     QObject::connect(m_customPlot_den, &QCustomPlot::mouseRelease, this, &MainWindow::onMouseRelease);
+
+    // 连接范围变化信号到槽函数
+    //QObject::connect(m_customPlot_den->xAxis, SIGNAL(rangeChanged(double, double)), this, SLOT(onXAxisRangeChanged(double, double)));
+    //QObject::connect(m_customPlot_den->yAxis, SIGNAL(rangeChanged(double, double)), this, SLOT(onYAxisRangeChanged(double, double)));
+
+    // 连接范围变化信号到槽函数
+    //QObject::connect(m_customPlot_den->xAxis, SIGNAL(rangeChanged(const QCPRange&)), this, SLOT(onXAxisRangeChanged(const QCPRange&)));
+    //QObject::connect(m_customPlot_den->yAxis, SIGNAL(rangeChanged(const QCPRange&)), this, SLOT(onYAxisRangeChanged(const QCPRange&)));
+
+    //QObject::connect(m_customPlot_den, &QCustomPlot::xAxisChanged, this, &MainWindow::updateTranslationOffset);
+    //QObject::connect(m_customPlot_den, &QCustomPlot::yAxisChanged, this, &MainWindow::updateTranslationOffset);
+
+
 }
 
 
@@ -353,7 +429,29 @@ void MainWindow::on_pushButton_back_clicked()
     const float vmax = ui->lineEdit_vmax->text().toFloat();
     const float vmin = ui->lineEdit_vmin->text().toFloat();
 
-    plot_den(m_outPutData,hLayout,vmax,vmin,m_customPlot_den);
+    //问题来了，放入plot_den？--tmp
+    //先生成一个新的m_customPlot_den，再填入hLayout
+//    if( nullptr != m_customPlot_den)
+//    {
+//        delete m_customPlot_den;
+//        m_customPlot_den = nullptr;
+//    }
+//    m_customPlot_den = new QCustomPlot();
+//    //布局设置
+//    // 检查g_custLayout_priWell中是否存在小部件
+//    QLayoutItem* existingItem = hLayout->takeAt(0);
+//    if (existingItem) {
+//        QWidget* existingWidget = existingItem->widget();
+//        if (existingWidget) {
+//            // 删除已存在的小部件
+//            delete existingWidget;
+//        }
+//        delete existingItem;
+//    }
+//    hLayout->addWidget(m_customPlot_den);
+
+
+    plot_den(m_outPutData,hLayout,vmax,vmin,m_customPlot_den );
 
     // 移除最后一个元素
     g_BackVal.pop_back();

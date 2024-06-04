@@ -24,7 +24,7 @@ QString fromStdString2QString(const std::string& str);
 void Normalize2DVector(std::vector<std::vector<float>>& data);
 void plot_den(const std::vector<std::vector<float>>& outData,QHBoxLayout* hLayout
               ,const float& vmax, const float& vmin
-              ,QCustomPlot* customPlot_den);
+              ,QCustomPlot* customPlot_den );
 QString denoiseModeToString(DenoiseMode mode);
 void initComboBoxDenoiseMode(QComboBox *comboBox);
 
