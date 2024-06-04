@@ -60,6 +60,54 @@ MainWindow::~MainWindow()
     delete ui;
 }
 
+void MainWindow::plot_den(const std::vector<std::vector<float>>& outData,QHBoxLayout* hLayout
+              ,const float& vmax, const float& vmin
+              ,QCustomPlot* customPlot_den )
+{
+    if( true == outData.empty())
+    {
+        qDebug() << " EMPTY oudata";
+        return;
+    }
+
+
+    const int row = outData.size();
+    const int col = outData.at(0).size();
+    QCPColorMap* colorMap = new QCPColorMap(customPlot_den->xAxis, customPlot_den->yAxis);
+    m_colorMap = colorMap;
+
+    colorMap->data()->setSize(row, col);
+    for (int i = 0  ; i < row; ++i )
+    {
+        for (int j = 0; j < col; ++j)
+        {
+            colorMap->data()->setCell(i, j, outData.at(i).at(j));
+        }
+    }
+    // 设置颜色映射
+    QCPColorGradient colorGradient;
+    colorGradient.loadPreset(QCPColorGradient::gpJet);
+    colorMap->setGradient(colorGradient);
+    colorMap->setInterpolate(false);
+    colorMap->setTightBoundary(true);
+    // 设置颜色映射的上下限
+    colorMap->setDataRange(QCPRange(vmin, vmax));
+
+    //customPlot_den->xAxis->setLabel(" "); // 设置横坐标标签
+    //customPlot_den->yAxis->setLabel(" "); // 设置纵坐标标签
+    //customPlot_den->yAxis->setRangeReversed(true);// 设置纵坐标反向
+    customPlot_den->axisRect()->setupFullAxesBox();//四边安装轴并显示
+    //customPlot_priW_den->legend->setVisible(true); // 显示图例
+    //customPlot_den->rescaleAxes();
+    customPlot_den->replot();
+
+    //交互方式
+    customPlot_den->setInteractions(QCP::iRangeDrag | QCP::iRangeZoom);
+
+
+}
+
+
 //交互去噪
 void MainWindow::denoiseDataInCircle(QPoint mousePos) {
 

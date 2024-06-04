@@ -30,10 +30,12 @@ public:
 
     QHBoxLayout* hLayout = nullptr;
     QCustomPlot* m_customPlot_den = nullptr;
-    QCPColorMap* m_colorMap;
+    QCPColorMap* m_colorMap = nullptr;
     //double g_threshold ;
     //double g_radius ;
-
+    void plot_den(const std::vector<std::vector<float>>& outData,QHBoxLayout* hLayout
+                  ,const float& vmax, const float& vmin
+                  ,QCustomPlot* customPlot_den );
 
 
 private:
