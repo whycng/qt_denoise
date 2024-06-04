@@ -2,6 +2,14 @@
 <!DOCTYPE TS>
 <TS version="2.1" language="zh_CN">
 <context>
+    <name>FilterConfigDialog</name>
+    <message>
+        <location filename="filterconfigdialog.ui" line="14"/>
+        <source>Dialog</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
     <name>MainWindow</name>
     <message>
         <location filename="mainwindow.ui" line="14"/>
@@ -51,6 +59,11 @@
     <message>
         <location filename="mainwindow.ui" line="169"/>
         <source>交互去噪-阈值</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="mainwindow.ui" line="188"/>
+        <source>配置参数</source>
         <translation type="unfinished"></translation>
     </message>
     <message>

@@ -1,5 +1,6 @@
 ﻿#include "filter_base2.h"
 
+#include "qdebug.h"
 #include "qtextcodec.h"
 #include "wavelet.h"
 using namespace Vector;
@@ -107,6 +108,8 @@ void gaussianFilter(float* input, float* output, int width, int height,
     delete[] kernel;
 }
 
+
+//调试1
 void gaussianFilter(const std::vector<std::vector<float>>& input,
                     std::vector<std::vector<float>>& output,
                     const int& kernelSize) {
@@ -116,40 +119,148 @@ void gaussianFilter(const std::vector<std::vector<float>>& input,
     std::vector<float> kernel(kernelSize * kernelSize);
 
     // Calculate the Gaussian kernel
+    float sigma = kernelRadius / 2.0;  // Standard deviation
+    float sum = 0.0;
     for (int i = -kernelRadius; i <= kernelRadius; i++) {
         for (int j = -kernelRadius; j <= kernelRadius; j++) {
             float distance = sqrt(i * i + j * j);
-            kernel[(i + kernelRadius) * kernelSize + (j + kernelRadius)] = exp(-distance * distance / (2 * kernelRadius * kernelRadius));
+            kernel[(i + kernelRadius) * kernelSize + (j + kernelRadius)] = exp(-distance * distance / (2 * sigma * sigma));
+            sum += kernel[(i + kernelRadius) * kernelSize + (j + kernelRadius)];
         }
     }
 
     // Normalize the kernel
-    float sum = 0;
-    for (float val : kernel) {
-        sum += val;
-    }
     for (float& val : kernel) {
         val /= sum;
     }
 
+    // Print the kernel for debugging
+//    std::cout << "Gaussian Kernel:" << std::endl;
+//    for (int i = 0; i < kernelSize; ++i) {
+//        for (int j = 0; j < kernelSize; ++j) {
+//            std::cout << kernel[i * kernelSize + j] << " ";
+//        }
+//        std::cout << std::endl;
+//    }
+
+    // Prepare output with the same size as input
+    output.resize(height, std::vector<float>(width, 0.0f));
+
     // Convolve the input image with the kernel
-    output.resize(height, std::vector<float>(width));
     for (int y = 0; y < height; y++) {
         for (int x = 0; x < width; x++) {
             float sum = 0;
+            float weightSum = 0;  // To normalize the sum at the borders
             for (int i = -kernelRadius; i <= kernelRadius; i++) {
                 for (int j = -kernelRadius; j <= kernelRadius; j++) {
-                    int neighborX = x + i;
-                    int neighborY = y + j;
+                    int neighborX = x + j;
+                    int neighborY = y + i;
                     if (neighborX >= 0 && neighborX < width && neighborY >= 0 && neighborY < height) {
                         sum += input[neighborY][neighborX] * kernel[(i + kernelRadius) * kernelSize + (j + kernelRadius)];
+                        weightSum += kernel[(i + kernelRadius) * kernelSize + (j + kernelRadius)];
                     }
                 }
             }
-            output[y][x] = sum;
+            output[y][x] = sum / weightSum;  // Normalize to avoid darkening at borders
         }
     }
 }
+
+//修正1
+//void gaussianFilter(const std::vector<std::vector<float>>& input,
+//                    std::vector<std::vector<float>>& output,
+//                    const int& kernelSize) {
+//    int width = input[0].size();
+//    int height = input.size();
+//    int kernelRadius = kernelSize / 2;
+//    std::vector<float> kernel(kernelSize * kernelSize);
+
+//    // Calculate the Gaussian kernel
+//    for (int i = -kernelRadius; i <= kernelRadius; i++) {
+//        for (int j = -kernelRadius; j <= kernelRadius; j++) {
+//            float distance = sqrt(i * i + j * j);
+//            kernel[(i + kernelRadius) * kernelSize + (j + kernelRadius)] = exp(-distance * distance / (2 * kernelRadius * kernelRadius));
+//        }
+//    }
+
+//    // Normalize the kernel
+//    float sum = 0;
+//    for (float val : kernel) {
+//        sum += val;
+//    }
+//    for (float& val : kernel) {
+//        val /= sum;
+//    }
+
+//    // Prepare output with the same size as input
+//    output.resize(height, std::vector<float>(width, 0.0f));
+
+//    // Convolve the input image with the kernel
+//    for (int y = 0; y < height; y++) {
+//        for (int x = 0; x < width; x++) {
+//            float sum = 0;
+//            float weightSum = 0;  // To normalize the sum at the borders
+//            for (int i = -kernelRadius; i <= kernelRadius; i++) {
+//                for (int j = -kernelRadius; j <= kernelRadius; j++) {
+//                    int neighborX = x + j;
+//                    int neighborY = y + i;
+//                    if (neighborX >= 0 && neighborX < width && neighborY >= 0 && neighborY < height) {
+//                        sum += input[neighborY][neighborX] * kernel[(i + kernelRadius) * kernelSize + (j + kernelRadius)];
+//                        weightSum += kernel[(i + kernelRadius) * kernelSize + (j + kernelRadius)];
+//                    }
+//                }
+//            }
+//            output[y][x] = sum / weightSum;  // Normalize to avoid darkening at borders
+//            qDebug() << " output[y][x]:" << output[y][x];
+//        }
+//    }
+//}
+
+
+//原版高斯滤波
+//void gaussianFilter(const std::vector<std::vector<float>>& input,
+//                    std::vector<std::vector<float>>& output,
+//                    const int& kernelSize) {
+//    int width = input[0].size();
+//    int height = input.size();
+//    int kernelRadius = kernelSize / 2;
+//    std::vector<float> kernel(kernelSize * kernelSize);
+
+//    // Calculate the Gaussian kernel
+//    for (int i = -kernelRadius; i <= kernelRadius; i++) {
+//        for (int j = -kernelRadius; j <= kernelRadius; j++) {
+//            float distance = sqrt(i * i + j * j);
+//            kernel[(i + kernelRadius) * kernelSize + (j + kernelRadius)] = exp(-distance * distance / (2 * kernelRadius * kernelRadius));
+//        }
+//    }
+
+//    // Normalize the kernel
+//    float sum = 0;
+//    for (float val : kernel) {
+//        sum += val;
+//    }
+//    for (float& val : kernel) {
+//        val /= sum;
+//    }
+
+//    // Convolve the input image with the kernel
+//    output.resize(height, std::vector<float>(width));
+//    for (int y = 0; y < height; y++) {
+//        for (int x = 0; x < width; x++) {
+//            float sum = 0;
+//            for (int i = -kernelRadius; i <= kernelRadius; i++) {
+//                for (int j = -kernelRadius; j <= kernelRadius; j++) {
+//                    int neighborX = x + i;
+//                    int neighborY = y + j;
+//                    if (neighborX >= 0 && neighborX < width && neighborY >= 0 && neighborY < height) {
+//                        sum += input[neighborY][neighborX] * kernel[(i + kernelRadius) * kernelSize + (j + kernelRadius)];
+//                    }
+//                }
+//            }
+//            output[y][x] = sum;
+//        }
+//    }
+//}
 
 //中值滤波
 void medianFilter(float* input, float* output, int width, int height, int kernelSize) {

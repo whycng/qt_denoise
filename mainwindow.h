@@ -1,6 +1,7 @@
 ﻿#ifndef MAINWINDOW_H
 #define MAINWINDOW_H
 
+#include "FilterConfigDialog.h"
 #include "qboxlayout.h"
 #include "qcombobox.h"
 #include "qcustomplot.h"
@@ -88,11 +89,15 @@ private slots:
     void on_pushButton_denoisePrc_clicked();
 
     void on_pushButton_back_clicked();
+    void on_pushButton_settings_clicked();
+
 signals:
     //void xAxisChanged(double dx, double dy);
     //void yAxisChanged(double dx, double dy);
 private:
     Ui::MainWindow *ui;
+//    FilterConfigDialog *configDialog;
+//    FilterConfig filterConfig;  // 存储滤波器配置
 
     bool m_selecting = false;
     QPoint m_startPoint;

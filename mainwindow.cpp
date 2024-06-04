@@ -361,7 +361,7 @@ void MainWindow::on_pushButton_denoisePrc_clicked()
             break;
         }
         case GaussianFilter: {//高斯滤波
-            gaussianFilter(m_data, outPutData, 11);
+            gaussianFilter(m_data, outPutData, 5);
             break;
         }
         case WaveletDenoise: {//小波
@@ -504,5 +504,26 @@ void MainWindow::on_pushButton_back_clicked()
     // 移除最后一个元素
     g_BackVal.pop_back();
 
+}
+
+//配置参数
+void MainWindow::on_pushButton_settings_clicked()
+{
+    FilterConfigDialog dialog(this);
+    if (dialog.exec() == QDialog::Accepted) {
+        FilterConfig config = dialog.getConfig();
+        config.print();  // 打印 config 内容以便调试
+        // 处理 config
+    }
+
+
+    //这种实现存在一些问题
+    // 显示配置对话框
+//    if (configDialog->exec() == QDialog::Accepted) {
+//        // 获取配置
+//        //filterConfig = configDialog->getConfig();
+//        // 在这里可以添加应用配置的代码，比如更新滤波器参数
+//        // applyFilter(filterConfig);
+//    }
 }
 

@@ -25,6 +25,8 @@ set(PROJECT_SOURCES
         wavelet.cpp
         filter_base2.cpp
         base_func.cpp
+        filterconfigdialog.cpp
+        filterconfigdialog.h
         base_func.h
         mainwindow.h
         qcustomplot.h
