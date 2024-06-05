@@ -91,6 +91,8 @@ private slots:
     void on_pushButton_back_clicked();
     void on_pushButton_settings_clicked();
 
+    void on_pushButton_saveData_clicked();
+
 signals:
     //void xAxisChanged(double dx, double dy);
     //void yAxisChanged(double dx, double dy);

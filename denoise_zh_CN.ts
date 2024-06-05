@@ -76,5 +76,20 @@
         <source>打开LAS文件</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <location filename="mainwindow.cpp" line="553"/>
+        <source>txt file (*.txt);;all file (*)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="mainwindow.cpp" line="557"/>
+        <source>warn</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="mainwindow.cpp" line="557"/>
+        <source>no choose file</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 </TS>

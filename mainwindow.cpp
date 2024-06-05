@@ -547,6 +547,21 @@ void MainWindow::on_pushButton_settings_clicked()
 //导出数据
 void MainWindow::on_pushButton_saveData_clicked()
 {
+    // 打开文件保存对话框
+    QString fileNameLas = QFileDialog::getSaveFileName(this,
+                                                       "save file", "",
+                                                       tr("txt file (*.txt);;all file (*)"));
 
+    // 检查用户是否取消了文件选择
+    if (fileNameLas.isEmpty()) {
+        QMessageBox::warning(this, tr("warn"), tr("no choose file"));
+        return;
+    }
+
+    // 将 QString 转换为 std::string
+    const std::string filePath = fromQString2stdString(fileNameLas);
+
+    // 保存文件
+    saveFile(filePath, m_outPutData);
 }
 
