@@ -384,6 +384,8 @@ void slidingAverageFilter(const std::vector<std::vector<float>>& input,
         }
     }
 }
+
+
 void slidingAverageFilter(const std::vector<std::vector<float>>& input,
                           std::vector<std::vector<float>>& output, int n) {
     // 获取行数和列数

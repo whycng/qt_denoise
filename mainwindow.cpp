@@ -23,6 +23,14 @@ MainWindow::MainWindow(QWidget *parent)
     ui->lineEdit_radius->setText("0.5");
     m_radius = 10;
 
+    m_config.slidingWindowSize = 3;//滑动滤波，窗口大小
+    m_config.medianWindowSize = 5;//中值滤波，窗口
+    m_config.gaussianKernelSize = 5;//高斯滤波，窗口
+    m_config.waveletLevel = 2;//小波，窗口
+    m_config.zeroPhaseCoefficients = { 0.25f, 0.5f, 0.25f };//零相位滤波
+    m_config.savitzkyGolayWindowSize = 5;//savitzkyGolay
+    m_config.savitzkyGolayPolynomialOrder = 2 ;//savitzkyGolay
+
     //qcustomplot框
     hLayout = new QHBoxLayout(ui->widget_pic);
     m_customPlot_den = new QCustomPlot();
@@ -320,7 +328,10 @@ void MainWindow::on_pushButton_readData_clicked()
     QString fileNameLas = QFileDialog::getOpenFileName(this,
         tr("打开LAS文件"), "", fileFilter);
     if (fileNameLas.isEmpty()) {
-        QMessageBox::warning(this, tr("警告"), tr("未选择文件"));
+        const std::string str_warn = "警告";
+        const std::string str_mesg = "未选择文件";
+        QMessageBox::warning(this, fromStdString2QString(str_warn)
+                             ,fromStdString2QString(str_mesg));
         return;
     }
 
@@ -353,15 +364,15 @@ void MainWindow::on_pushButton_denoisePrc_clicked()
     const int mode = ui->comboBox_denoiseMode->currentIndex();
     switch(mode){
         case SlidingAverageFilter: {//滑动平均法滤波
-            slidingAverageFilter(m_data, outPutData);
+            slidingAverageFilter(m_data, outPutData, m_config.slidingWindowSize);//3
             break;
         }
         case MedianFilter: {//中值滤波
-            medianFilter(m_data, outPutData, 5);
+            medianFilter(m_data, outPutData, m_config.medianWindowSize);//5
             break;
         }
         case GaussianFilter: {//高斯滤波
-            gaussianFilter(m_data, outPutData, 5);
+            gaussianFilter(m_data, outPutData, m_config.gaussianKernelSize);// 5
             break;
         }
         case WaveletDenoise: {//小波
@@ -374,7 +385,9 @@ void MainWindow::on_pushButton_denoisePrc_clicked()
             break;
         }
         case SavitzkyGolayFilter: {//Savitzky-Golay 滤波
-            applySavitzkyGolay(m_data, outPutData, 5, 2);
+            applySavitzkyGolay(m_data, outPutData,
+                               m_config.savitzkyGolayWindowSize,
+                               m_config.savitzkyGolayPolynomialOrder);//5 2
             break;
         }
         case MadFilter: {//mad滤波
@@ -389,6 +402,8 @@ void MainWindow::on_pushButton_denoisePrc_clicked()
     qDebug() << "去噪完成 denoist over" << outPutData.size() << " "
         << outPutData.at(0).size();
 
+    g_recentVal.clear();
+    g_BackVal.clear();
     const float vmax = ui->lineEdit_vmax->text().toFloat();
     const float vmin = ui->lineEdit_vmin->text().toFloat();
 
@@ -511,8 +526,10 @@ void MainWindow::on_pushButton_settings_clicked()
 {
     FilterConfigDialog dialog(this);
     if (dialog.exec() == QDialog::Accepted) {
-        FilterConfig config = dialog.getConfig();
-        config.print();  // 打印 config 内容以便调试
+        m_config = dialog.getConfig();
+        //config.print();  // 打印 config 内容以便调试
+        //qDebug() << config.gaussianKernelSize << " " << config.medianWindowSize;
+        qDebug() << " print over";
         // 处理 config
     }
 
@@ -525,5 +542,11 @@ void MainWindow::on_pushButton_settings_clicked()
 //        // 在这里可以添加应用配置的代码，比如更新滤波器参数
 //        // applyFilter(filterConfig);
 //    }
+}
+
+//导出数据
+void MainWindow::on_pushButton_saveData_clicked()
+{
+
 }
 

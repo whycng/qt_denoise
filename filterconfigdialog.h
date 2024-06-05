@@ -1,6 +1,7 @@
 ﻿#ifndef FILTERCONFIGDIALOG_H
 #define FILTERCONFIGDIALOG_H
 
+#include "qdebug.h"
 #include <QDialog>
 #include <QDialog>
 #include <QSpinBox>
@@ -11,29 +12,15 @@
 #include <vector>
 
 struct FilterConfig {
-    int slidingWindowSize;
-    int medianWindowSize;
-    int gaussianKernelSize;
-    int waveletLevel;
-    std::vector<float> zeroPhaseCoefficients;
-    int savitzkyGolayWindowSize;
-    int savitzkyGolayPolynomialOrder;
-    float madThreshold;
+    int slidingWindowSize;//滑动滤波，窗口大小
+    int medianWindowSize;//中值滤波，窗口
+    int gaussianKernelSize;//高斯滤波，窗口
+    int waveletLevel;//小波，窗口
+    std::vector<float> zeroPhaseCoefficients;//零相位滤波
+    int savitzkyGolayWindowSize;//savitzkyGolay
+    int savitzkyGolayPolynomialOrder;//savitzkyGolay
+    //float madThreshold;//mad滤波
 
-    void print() const {
-        std::cout << "Sliding Window Size: " << slidingWindowSize << "\n"
-                  << "Median Window Size: " << medianWindowSize << "\n"
-                  << "Gaussian Kernel Size: " << gaussianKernelSize << "\n"
-                  << "Wavelet Level: " << waveletLevel << "\n"
-                  << "Zero Phase Coefficients: ";
-        for (float coeff : zeroPhaseCoefficients) {
-            std::cout << coeff << " ";
-        }
-        std::cout << "\n"
-                  << "Savitzky-Golay Window Size: " << savitzkyGolayWindowSize << "\n"
-                  << "Savitzky-Golay Polynomial Order: " << savitzkyGolayPolynomialOrder << "\n"
-                  << "MAD Threshold: " << madThreshold << "\n";
-    }
 };
 
 
@@ -51,7 +38,7 @@ private:
     QSpinBox *waveletLevelSpinBox;
     QSpinBox *savitzkyGolayWindowSizeSpinBox;
     QSpinBox *savitzkyGolayPolynomialOrderSpinBox;
-    QDoubleSpinBox *madThresholdSpinBox;
+    //QDoubleSpinBox *madThresholdSpinBox; //不需要
 };
 
 //ui的方式

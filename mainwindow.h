@@ -99,6 +99,7 @@ private:
 //    FilterConfigDialog *configDialog;
 //    FilterConfig filterConfig;  // 存储滤波器配置
 
+    FilterConfig m_config;
     bool m_selecting = false;
     QPoint m_startPoint;
     QPoint m_endPoint;
