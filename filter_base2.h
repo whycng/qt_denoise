@@ -103,4 +103,4 @@ void gaussianFilter(float* input, float* output, int width, int height,
 //存储文件
 void saveFile(const std::string& filePath, const std::vector<std::vector<float>>& data);
 //读取las文件
-std::vector<std::vector<float>> readLasFile(const std::string& filePath);
+//std::vector<std::vector<float>> readLasFile(const std::string& filePath);

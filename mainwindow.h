@@ -35,15 +35,20 @@ public:
     //double g_radius ;
     void plot_den(const std::vector<std::vector<float>>& outData,QHBoxLayout* hLayout
                   ,const float& vmax, const float& vmin
-                  ,QCustomPlot* customPlot_den );
+                  ,QCustomPlot* customPlot_den
+                  ,const bool& rectMode);
 
 
 private:
     void updateRedCircle() ;
     void denoiseDataInCircle(QPoint mousePos);
     void denoiseDataSlideCircle(QPoint mousePos);
+    void applyFilterToSelection( const double& xCoordLB,const double& yCoordLB,
+                                 const double& xCoordRT,const double& yCoordRT);
+    std::vector<std::vector<float>> readLasFile(const std::string& filePath);
 private slots:
 
+    void onProgressUpdate(int val);
     /*void onXAxisRangeChanged(double lower, double upper)
     {
         m_xoffset = m_xrangeLow - lower;
@@ -95,7 +100,12 @@ private slots:
 
     void on_pushButton_savePic_clicked();
 
+    void on_checkBox_rect_stateChanged(int arg1);
+
+    void on_pushButton_oriScale_clicked();
+
 signals:
+    void progressUpdate(int val);
     //void xAxisChanged(double dx, double dy);
     //void yAxisChanged(double dx, double dy);
 private:
@@ -125,6 +135,14 @@ private:
     double m_yrangeLow;
     double m_xoffset;
     double m_yoffset;
+
+    QCPItemRect *selectionRect = nullptr;
+    QPoint dragStartPoint;
+    QPoint dragEndPoint;
+    bool isDragging;
+    bool g_rectMode = false;
+
+    QProgressDialog *progressBar = nullptr;
 
 };
 #endif // MAINWINDOW_H

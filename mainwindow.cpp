@@ -26,6 +26,9 @@ MainWindow::MainWindow(QWidget *parent)
     ui->checkBox_rightClick->setChecked(Qt::Unchecked);
     ui->checkBox_rightSlider->setChecked(Qt::Unchecked);
     ui->checkBox_whichone->setChecked(Qt::Checked);
+    ui->checkBox_rect->blockSignals(true);  // 禁用信号
+    ui->checkBox_rect->setChecked(Qt::Unchecked);
+    ui->checkBox_rect->blockSignals(false);  // 启用信号
     ui->comboBox_calDenoiseVal->addItem("均值去噪");
     ui->comboBox_calDenoiseVal->addItem("中值去噪");
     ui->comboBox_calDenoiseVal->addItem("高斯滤波去噪");
@@ -43,6 +46,7 @@ MainWindow::MainWindow(QWidget *parent)
     hLayout = new QHBoxLayout(ui->widget_pic);
     m_customPlot_den = new QCustomPlot();
 
+
     //限定输入为0-1之内的浮点数
     QDoubleValidator *validator1 = new QDoubleValidator(0.0, 1.0, 6, this);
     validator1->setNotation(QDoubleValidator::StandardNotation);
@@ -57,6 +61,9 @@ MainWindow::MainWindow(QWidget *parent)
     validator2->setDecimals(2);  // 设置小数点后的位数
     // 将验证器应用到 QLineEdit
     ui->lineEdit_radius->setValidator(validator2);
+
+    connect(this,&MainWindow::progressUpdate,this,&MainWindow::onProgressUpdate);
+
 
 //    // Enable mouse tracking to capture move events even when no button is pressed
 //    m_customPlot_den->setMouseTracking(true);
@@ -76,10 +83,45 @@ MainWindow::~MainWindow()
     delete ui;
 }
 
+void MainWindow::onProgressUpdate(int val)
+{
+
+    qDebug() << " onProgressUpdate:" << val;
+    if( 1 == val)
+    {
+        // 创建进度条
+        if( nullptr != progressBar )
+        {
+            delete progressBar;
+            progressBar = nullptr;
+        }
+        progressBar = new QProgressDialog();
+        progressBar->setWindowTitle("数据加载中...");
+        progressBar->setRange(0, 100);
+        progressBar->setValue(0);
+        progressBar->setMinimumSize(300, 50);
+
+        progressBar->show();
+    }
+    else if( val < 10 )
+    {
+        progressBar->setValue(val * 10);
+        QCoreApplication::processEvents();  // 确保事件循环处理事件
+    }
+    else
+    {
+        progressBar->setValue(val * 10);
+        progressBar->close();
+    }
+
+};
+
+
 //绘制图像
 void MainWindow::plot_den(const std::vector<std::vector<float>>& outData,QHBoxLayout* hLayout
               ,const float& vmax, const float& vmin
-              ,QCustomPlot* customPlot_den )
+              ,QCustomPlot* customPlot_den
+              ,const bool& rectMode)
 {
     if( true == outData.empty())
     {
@@ -119,9 +161,14 @@ void MainWindow::plot_den(const std::vector<std::vector<float>>& outData,QHBoxLa
     customPlot_den->replot();
 
     //交互方式
-    customPlot_den->setInteractions(QCP::iRangeDrag | QCP::iRangeZoom);
-
-
+    if( true == rectMode)
+    {
+        customPlot_den->setInteractions(QCP::iRangeZoom);
+    }
+    else
+    {
+        customPlot_den->setInteractions(QCP::iRangeDrag | QCP::iRangeZoom);
+    }
 }
 
 
@@ -129,8 +176,10 @@ void MainWindow::plot_den(const std::vector<std::vector<float>>& outData,QHBoxLa
 //交互去噪 --点值 点击去噪
 void MainWindow::denoiseDataInCircle(QPoint mousePos) {
 
-    const float vmax = ui->lineEdit_vmax->text().toFloat();
-    const float vmin = ui->lineEdit_vmin->text().toFloat();
+    qDebug() << " <denoiseDataInCircle> 执行";
+
+//    const float vmax = ui->lineEdit_vmax->text().toFloat();
+//    const float vmin = ui->lineEdit_vmin->text().toFloat();
     const float threshold = ui->lineEdit_threshold->text().toFloat();
 
     // 将鼠标像素坐标转换为轴坐标
@@ -393,6 +442,132 @@ void MainWindow::denoiseDataSlideCircle(QPoint mousePos) {
 
 }
 
+void MainWindow::applyFilterToSelection(const double& xCoordLB, const double& yCoordLB,
+                                        const double& xCoordRT, const double& yCoordRT)
+{
+    // 中心点
+    const double xCoord = (xCoordLB + xCoordRT) / 2;
+    const double yCoord = (yCoordLB + yCoordRT) / 2;
+
+    const float threshold = ui->lineEdit_threshold->text().toFloat();
+
+    // 收集选中数据点的值及其索引
+    std::vector<std::pair<int, int>> indices;
+    std::vector<float> values;
+
+    if (!m_colorMap) {
+        qDebug() << "colorMap is not initialized.";
+        return;
+    }
+
+    QCPColorMapData* data = m_colorMap->data();
+
+    int keySize = data->keySize();
+    int valueSize = data->valueSize();
+
+    int xMin, xMax, yMin, yMax;
+    data->coordToCell(xCoordLB, yCoordLB, &xMin, &yMin);
+    data->coordToCell(xCoordRT, yCoordRT, &xMax, &yMax);
+
+    // 确保索引在有效范围内
+    int xMinIndex = std::max(0, xMin);
+    int xMaxIndex = std::min(keySize - 1, xMax);
+    int yMinIndex = std::max(0, yMin);
+    int yMaxIndex = std::min(valueSize - 1, yMax);
+
+    // 获取权重模式
+    WeightMode wmode = static_cast<WeightMode>(ui->comboBox_InteractionMode->currentIndex());
+
+    // 获取 someDenoisedValue
+    double someDenoisedValue = 0.0;
+    const bool inverseWeight = ui->checkBox_whichone->isChecked();
+    const int calmode = ui->comboBox_calDenoiseVal->currentIndex();
+    qDebug() << "calmode:" << calmode;
+
+    if (calmode == 0) {
+        // 均值去噪
+        double sum = 0.0;
+        int count = 0;
+        for (int xi = xMinIndex; xi <= xMaxIndex; ++xi) {
+            for (int yi = yMinIndex; yi <= yMaxIndex; ++yi) {
+                sum += m_outPutData[xi][yi];
+                count++;
+            }
+        }
+        someDenoisedValue = (count > 0) ? (sum / count) : 0.0;
+    } else if (calmode == 1) {
+        // 中值去噪
+        std::vector<double> neighborhoodValues;
+        for (int xi = xMinIndex; xi <= xMaxIndex; ++xi) {
+            for (int yi = yMinIndex; yi <= yMaxIndex; ++yi) {
+                neighborhoodValues.push_back(m_outPutData[xi][yi]);
+            }
+        }
+        if (!neighborhoodValues.empty()) {
+            std::sort(neighborhoodValues.begin(), neighborhoodValues.end());
+            someDenoisedValue = neighborhoodValues[neighborhoodValues.size() / 2];
+        }
+    } else if (calmode == 2) {
+        // 高斯滤波去噪
+        double sum = 0.0;
+        double weightSum = 0.0;
+        for (int xi = xMinIndex; xi <= xMaxIndex; ++xi) {
+            for (int yi = yMinIndex; yi <= yMaxIndex; ++yi) {
+                double x_inner, y_inner;
+                data->cellToCoord(xi, yi, &x_inner, &y_inner);
+                double dist_inner = std::sqrt(std::pow(x_inner - xCoord, 2) + std::pow(y_inner - yCoord, 2));
+                double weight = std::exp(-std::pow(dist_inner, 2));
+                sum += m_outPutData[xi][yi] * weight;
+                weightSum += weight;
+            }
+        }
+        someDenoisedValue = (weightSum > 0) ? (sum / weightSum) : 0.0;
+    }
+
+    qDebug() << "someDenoisedValue:" << someDenoisedValue;
+
+    for (int xIndex = xMinIndex; xIndex <= xMaxIndex; ++xIndex) {
+        for (int yIndex = yMinIndex; yIndex <= yMaxIndex; ++yIndex) {
+            double x, y;
+            data->cellToCoord(xIndex, yIndex, &x, &y);
+
+            indices.push_back(std::make_pair(xIndex, yIndex));
+            values.push_back(m_outPutData[xIndex][yIndex]);
+
+            double weight = 1;
+
+            switch (wmode) {
+            case WeightMode::NoWeight:
+                weight = 1;  // NoWeight 模式下，权重为1
+                break;
+            case WeightMode::LinearWeight:
+                weight = inverseWeight ? (std::sqrt(std::pow(x - xCoord, 2) + std::pow(y - yCoord, 2))) : (1.0 - std::sqrt(std::pow(x - xCoord, 2) + std::pow(y - yCoord, 2)));  // 线性权重
+                break;
+            case WeightMode::ExponentialWeight:
+                weight = inverseWeight ? (1 - std::exp(-std::sqrt(std::pow(x - xCoord, 2) + std::pow(y - yCoord, 2)))) : std::exp(-std::sqrt(std::pow(x - xCoord, 2) + std::pow(y - yCoord, 2))); // 指数衰减权重
+                break;
+            case WeightMode::GaussianWeight:
+                weight = inverseWeight ? (1 - std::exp(-std::pow(std::sqrt(std::pow(x - xCoord, 2) + std::pow(y - yCoord, 2)), 2))) : std::exp(-std::pow(std::sqrt(std::pow(x - xCoord, 2) + std::pow(y - yCoord, 2)), 2)); // 高斯权重
+                break;
+            default:
+                weight = 1;  // 默认权重为1，确保程序不会崩溃
+                break;
+            }
+
+            m_outPutData[xIndex][yIndex] = m_outPutData[xIndex][yIndex] * weight + someDenoisedValue * (1 - weight);
+        }
+    }
+
+    // 添加新的元素到容器尾部
+    g_recentVal.push_back({indices, values});
+
+    // 阈值去噪
+    if (WeightMode::NoWeight == wmode)
+    {
+        theshorldDenoise(values, indices, threshold, m_outPutData);
+    }
+}
+
 
 void MainWindow::updateRedCircle() {
     //    if (!m_customPlot_den->viewport().contains(m_mousePos)) {
@@ -410,25 +585,61 @@ void MainWindow::updateRedCircle() {
 
 //鼠标按下事件处理
 void MainWindow::onMousePress(QMouseEvent *event) {
+    const float vmax = ui->lineEdit_vmax->text().toFloat();
+    const float vmin = ui->lineEdit_vmin->text().toFloat();
     if (event->button() == Qt::RightButton) { //鼠标右键
-        //m_customPlot_den->setCurrentLayer("TST");
-        m_selecting = true;
-        m_startPoint = event->pos();
-        m_endPoint = m_startPoint;
         //如果勾选了鼠标右键单击去噪模式，则执行
         if( Qt::Checked == ui->checkBox_rightClick->checkState())
         {
             denoiseDataInCircle(event->pos());
+            //绘制
+            plot_den(m_outPutData,hLayout,vmax,vmin,m_customPlot_den,g_rectMode);
         }
     }
-    if (event->button() == Qt::LeftButton) // 鼠标左键
+
+    if (event->button() == Qt::RightButton) { //鼠标右键
+        //m_customPlot_den->setCurrentLayer("TST");
+        if( Qt::Checked == ui->checkBox_rightSlider->checkState())
+        {//如果选中了滑动交互
+            m_selecting = true;
+        }
+
+        m_startPoint = event->pos();
+        m_endPoint = m_startPoint;
+
+    }
+    if (event->button() == Qt::LeftButton && g_rectMode) // 鼠标左键
     {
 
+        dragStartPoint = event->pos();
+        isDragging = true;
+        // 初始化 selectionRect
+        if (selectionRect != nullptr) {
+            m_customPlot_den->removeItem(selectionRect); // 从 QCustomPlot 中移除
+            //--不知道为啥导致虚函数析构报错，也许是因为qcus内部管理
+            //delete selectionRect; // 删除对象
+            selectionRect = nullptr; // 避免悬空指针
+        }
+
+        selectionRect = new QCPItemRect(m_customPlot_den); // 创建新的 QCPItemRect
+
+        selectionRect->setPen(QPen(Qt::red));
+        selectionRect->setBrush(Qt::NoBrush);
+        selectionRect->setVisible(false);
+        // 初始化 selectionRect
+        selectionRect->topLeft->setCoords(m_customPlot_den->xAxis->pixelToCoord(dragStartPoint.x()),
+                                          m_customPlot_den->yAxis->pixelToCoord(dragStartPoint.y()));
+        selectionRect->bottomRight->setCoords(m_customPlot_den->xAxis->pixelToCoord(dragStartPoint.x()),
+                                              m_customPlot_den->yAxis->pixelToCoord(dragStartPoint.y()));
+        selectionRect->setVisible(true);
+        m_customPlot_den->replot();
     }
 }
 
 //鼠标移动事件处理
 void MainWindow::onMouseMove(QMouseEvent *event) {
+
+    //m_selecting决定了是否选中了滑动交互
     if (m_selecting && event->buttons() & Qt::RightButton) {
         m_endPoint = event->pos();
         //m_customPlot_den->replot();
@@ -443,26 +654,32 @@ void MainWindow::onMouseMove(QMouseEvent *event) {
             denoiseDataSlideCircle(event->pos());
         }
     }
-    if (event->button() == Qt::LeftButton) // 鼠标左键
+    if (event->buttons() & Qt::LeftButton && g_rectMode ) // 鼠标左键
     {
-
+        dragEndPoint = event->pos();
+        // 更新 selectionRect
+        selectionRect->bottomRight->setCoords(m_customPlot_den->xAxis->pixelToCoord(dragEndPoint.x()),
+                                              m_customPlot_den->yAxis->pixelToCoord(dragEndPoint.y()));
+        m_customPlot_den->replot();
     }
 }
 
 
 //鼠标释放事件处理
 void MainWindow::onMouseRelease(QMouseEvent *event) {
-    if (event->button() == Qt::RightButton) {
+
+    const float vmax = ui->lineEdit_vmax->text().toFloat();
+    const float vmin = ui->lineEdit_vmin->text().toFloat();
+
+    //如果右键 且 滑动交互
+    if (m_selecting && event->button() == Qt::RightButton) {
         m_selecting = false;
         m_endPoint = event->pos();
-        //performDenoising();
-        //m_customPlot_den->replot();
-        const float vmax = ui->lineEdit_vmax->text().toFloat();
-        const float vmin = ui->lineEdit_vmin->text().toFloat();
 
+        //压入上一步，清空g_recentVal
         qDebug() << "onMouseRelease g_recentVal size:" << g_recentVal.size();
         g_BackVal.push_back(g_recentVal);
-        if (g_BackVal.size() == 20)
+        if (g_BackVal.size() == 50)
         {
             g_BackVal.pop_back();
         }
@@ -499,15 +716,117 @@ void MainWindow::onMouseRelease(QMouseEvent *event) {
         hLayout->addWidget(m_customPlot_den);
 */
 
-        plot_den(m_outPutData,hLayout,vmax,vmin,m_customPlot_den );
         qDebug() << "<onMouseRelease> shi fang wan bi m_endPoint:" << m_endPoint;
         m_customPlot_den->setCurrentLayer("main");
-    }
-    if (event->button() == Qt::LeftButton) // 鼠标左键
-    {
 
+        //绘制
+        plot_den(m_outPutData,hLayout,vmax,vmin,m_customPlot_den,g_rectMode);
     }
+    if (event->button() == Qt::LeftButton && g_rectMode ) // 鼠标左键
+    {
+        isDragging = false;
+        dragEndPoint = event->pos();
+
+        // 更新 selectionRect
+        selectionRect->bottomRight->setCoords(m_customPlot_den->xAxis->pixelToCoord(dragEndPoint.x()),
+                                              m_customPlot_den->yAxis->pixelToCoord(dragEndPoint.y()));
+        m_customPlot_den->replot();
+
+        // 进行去噪处理
+        // 这里你需要将拖动选区转换为矩阵的索引范围
+        // 获取拖动的起始和结束点的像素坐标
+        double x1 = m_customPlot_den->xAxis->pixelToCoord(dragStartPoint.x());
+        double y1 = m_customPlot_den->yAxis->pixelToCoord(dragStartPoint.y());
+        double x2 = m_customPlot_den->xAxis->pixelToCoord(dragEndPoint.x());
+        double y2 = m_customPlot_den->yAxis->pixelToCoord(dragEndPoint.y());
+
+        // 计算左下角 (xLB, yLB) 和右上角 (xRB, yRB) 的坐标
+        double xLB = qMin(x1, x2);
+        double yLB = qMin(y1, y2);
+        double xRT = qMax(x1, x2);
+        double yRT = qMax(y1, y2);
+
+
+        // 假设你已经有一个函数 applyMadFilterToSelection
+        applyFilterToSelection(xLB, yLB, xRT, yRT);
+
+        // 清除选区
+        selectionRect->setVisible(false);
+        //m_customPlot_den->replot();
+
+        //压入上一步，清空g_recentVal
+        qDebug() << "onMouseRelease g_recentVal size:" << g_recentVal.size();
+        g_BackVal.push_back(g_recentVal);
+        if (g_BackVal.size() == 50)
+        {
+            g_BackVal.pop_back();
+        }
+        g_recentVal.clear();
+        qDebug() << "PUSH_BACK g_BackVal size:" << g_BackVal.size();
+
+        //绘制
+        plot_den(m_outPutData,hLayout,vmax,vmin,m_customPlot_den,g_rectMode);
+    }
+
+
 }
+
+
+
+
+//读取las文件
+std::vector<std::vector<float>> MainWindow::readLasFile(const std::string& filePath)
+{
+    std::vector<std::vector<float>> data;
+    std::string line;
+
+    std::ifstream file(filePath);
+    if (!file) {
+        std::cerr << "Error opening  file!" << std::endl;
+        return data;
+    }
+
+    std::ifstream fileLine(filePath);
+    //总行数
+    const int lienCount = std::count(std::istreambuf_iterator<char>(fileLine),// 文件开始的字符迭代器
+                                     std::istreambuf_iterator<char>(),// 文件结束的字符迭代器
+                                     '\n');// 要计数的字符：换行符
+    const int modVal = lienCount / 10;//取模值
+    int sendVal = 1;//发送的进度条值
+    int addLine = 1;//记录行数
+
+    std::getline(file, line);//跳过首行
+    while (std::getline(file, line)) {
+
+        if( addLine % modVal == 0)
+        {
+            //qDebug() << " addLine:" << addLine << " modVal:" << modVal
+            //         << " sendVal:" << sendVal;
+            emit progressUpdate(sendVal);
+            ++sendVal;
+        }
+
+        std::istringstream iss(line);
+        std::vector<float> row;
+        float value;
+
+        // read depth (first column)
+        iss >> value;
+        //row.push_back(value); //深度值，暂时不需要
+
+        // read data body (remaining columns)
+        while (iss >> value) {
+            row.push_back(value);
+        }
+
+        data.push_back(row);
+        ++addLine;
+    }
+
+    file.close();
+    return data;
+}
+
 
 //读取数据
 void MainWindow::on_pushButton_readData_clicked()
@@ -622,7 +941,7 @@ void MainWindow::on_pushButton_denoisePrc_clicked()
     //用鼠标按下和释放去控制回到main层
     //m_customPlot_den->setCurrentLayer("main");
     //绘制
-    plot_den(outPutData,hLayout,vmax,vmin,m_customPlot_den );
+    plot_den(outPutData,hLayout,vmax,vmin,m_customPlot_den,g_rectMode);
     m_outPutData = outPutData;
     //记录当前尺寸
     // 获取ColorMap的实际尺寸范围
@@ -705,7 +1024,7 @@ void MainWindow::on_pushButton_back_clicked()
 //    hLayout->addWidget(m_customPlot_den);
 
 
-    plot_den(m_outPutData,hLayout,vmax,vmin,m_customPlot_den );
+    plot_den(m_outPutData,hLayout,vmax,vmin,m_customPlot_den,g_rectMode);
 
     // 移除最后一个元素
     g_BackVal.pop_back();
@@ -811,5 +1130,29 @@ void MainWindow::on_pushButton_savePic_clicked()
             qDebug() << "Failed to save image at" << fullPath;
         }
     }
+}
+
+//矩形框交互
+void MainWindow::on_checkBox_rect_stateChanged(int arg1)
+{
+    if( nullptr == m_customPlot_den ) return;
+    if( Qt::Checked == arg1)
+    {
+        g_rectMode = true;
+        m_customPlot_den->setInteractions(QCP::iRangeZoom);
+    }
+    else
+    {
+        g_rectMode = false;
+        m_customPlot_den->setInteractions(QCP::iRangeDrag | QCP::iRangeZoom);
+    }
+}
+
+//恢复初始大小
+void MainWindow::on_pushButton_oriScale_clicked()
+{
+    if( nullptr == m_customPlot_den) return;
+    m_customPlot_den->rescaleAxes();
+    m_customPlot_den->replot();
 }
 

@@ -43,7 +43,12 @@
 3.设定图像显示的阈值(默认上下阈值分别为1，0，设置较小的上下阈值有利于查看结果)
 4.点击去噪
 5.鼠标右键点击图像并拖动，进行交互去噪，交互去噪的阈值和半径需要手动设置（半径可根据图像坐标尺寸来选择，阈值根据去噪效果来选择，当去噪效果不理想时点击上一步，即可恢复上一步的图像显示）
-6.去噪完毕后，可以导出数据或者导出图像（导出图像可指定图像的尺寸，一般默认选择宽500像素，高1000像素）</string>
+交互去噪有三种类型
+a.鼠标右键单击去噪 
+b.鼠标右键滑动去噪
+c.鼠标左键选择矩形框去噪
+6.去噪完毕后，可以导出数据或者导出图像（导出图像可指定图像的尺寸，一般默认选择宽500像素，高1000像素）
+</string>
             </property>
            </widget>
           </item>
@@ -158,11 +163,18 @@
       <item>
        <layout class="QVBoxLayout" name="verticalLayout" stretch="1,100">
         <item>
-         <layout class="QHBoxLayout" name="horizontalLayout_3" stretch="0,0,0,0,0,0,0,0,0">
+         <layout class="QHBoxLayout" name="horizontalLayout_3" stretch="0,0,0,0,0,0,0,0,0,0,0">
           <item>
            <widget class="QPushButton" name="pushButton_back">
             <property name="text">
              <string>上一步</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QPushButton" name="pushButton_oriScale">
+            <property name="text">
+             <string>恢复初始大小</string>
             </property>
            </widget>
           </item>
@@ -179,14 +191,7 @@
           <item>
            <widget class="QCheckBox" name="checkBox_rightClick">
             <property name="text">
-             <string>点击交互</string>
-            </property>
-           </widget>
-          </item>
-          <item>
-           <widget class="QCheckBox" name="checkBox_rightSlider">
-            <property name="text">
-             <string>滑动交互</string>
+             <string>单击交互</string>
             </property>
            </widget>
           </item>
@@ -219,6 +224,20 @@
              </size>
             </property>
            </spacer>
+          </item>
+          <item>
+           <widget class="QCheckBox" name="checkBox_rect">
+            <property name="text">
+             <string>矩形框交互</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QCheckBox" name="checkBox_rightSlider">
+            <property name="text">
+             <string>滑动交互</string>
+            </property>
+           </widget>
           </item>
          </layout>
         </item>

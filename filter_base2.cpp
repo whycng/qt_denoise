@@ -9,39 +9,39 @@ using namespace Vector;
 
 
 
-//读取las文件
-std::vector<std::vector<float>> readLasFile(const std::string& filePath)
-{
-    std::vector<std::vector<float>> data;
-    std::string line;
+////读取las文件
+//std::vector<std::vector<float>> readLasFile(const std::string& filePath)
+//{
+//    std::vector<std::vector<float>> data;
+//    std::string line;
 
-    std::ifstream file(filePath);
-    if (!file) {
-        std::cerr << "Error opening  file!" << std::endl;
-        return data;
-    }
+//    std::ifstream file(filePath);
+//    if (!file) {
+//        std::cerr << "Error opening  file!" << std::endl;
+//        return data;
+//    }
 
-    std::getline(file, line);//跳过首行
-    while (std::getline(file, line)) {
-        std::istringstream iss(line);
-        std::vector<float> row;
-        float value;
+//    std::getline(file, line);//跳过首行
+//    while (std::getline(file, line)) {
+//        std::istringstream iss(line);
+//        std::vector<float> row;
+//        float value;
 
-        // read depth (first column)
-        iss >> value;
-        //row.push_back(value); //深度值，暂时不需要
+//        // read depth (first column)
+//        iss >> value;
+//        //row.push_back(value); //深度值，暂时不需要
 
-        // read data body (remaining columns)
-        while (iss >> value) {
-            row.push_back(value);
-        }
+//        // read data body (remaining columns)
+//        while (iss >> value) {
+//            row.push_back(value);
+//        }
 
-        data.push_back(row);
-    }
+//        data.push_back(row);
+//    }
 
-    file.close();
-    return data;
-}
+//    file.close();
+//    return data;
+//}
 
 //存储文件
 void saveFile(const std::string& filePath, const std::vector<std::vector<float>>& data) {
