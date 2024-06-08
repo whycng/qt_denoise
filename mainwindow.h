@@ -93,6 +93,8 @@ private slots:
 
     void on_pushButton_saveData_clicked();
 
+    void on_pushButton_savePic_clicked();
+
 signals:
     //void xAxisChanged(double dx, double dy);
     //void yAxisChanged(double dx, double dy);

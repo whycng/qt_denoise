@@ -17,6 +17,12 @@ find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Widgets PrintSupport)
 
 set(TS_FILES denoise_zh_CN.ts)
 
+#设置编码
+if (CMAKE_SYSTEM_NAME MATCHES "Windows")
+add_compile_options("$<$<C_COMPILER_ID:MSVC>:/utf-8>")   #解决编码问题
+add_compile_options("$<$<CXX_COMPILER_ID:MSVC>:/utf-8>") #解决编码问题
+endif()
+
 set(PROJECT_SOURCES
         main.cpp
         mainwindow.cpp
@@ -26,6 +32,8 @@ set(PROJECT_SOURCES
         filter_base2.cpp
         base_func.cpp
         filterconfigdialog.cpp
+        CustomDepthDialog.cpp
+        CustomDepthDialog.h
         filterconfigdialog.h
         base_func.h
         mainwindow.h

@@ -6,6 +6,7 @@
 #include "filter_base2.h"
 #include "base_func.h"
 #include "qcustomplot.h"
+#include "CustomDepthDialog.h"
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
@@ -26,7 +27,7 @@ MainWindow::MainWindow(QWidget *parent)
     m_config.slidingWindowSize = 3;//滑动滤波，窗口大小
     m_config.medianWindowSize = 5;//中值滤波，窗口
     m_config.gaussianKernelSize = 5;//高斯滤波，窗口
-    m_config.waveletLevel = 2;//小波，窗口
+    m_config.waveletLevel = 4;//小波，窗口
     m_config.zeroPhaseCoefficients = { 0.25f, 0.5f, 0.25f };//零相位滤波
     m_config.savitzkyGolayWindowSize = 5;//savitzkyGolay
     m_config.savitzkyGolayPolynomialOrder = 2 ;//savitzkyGolay
@@ -151,49 +152,48 @@ void MainWindow::denoiseDataInCircle(QPoint mousePos) {
 
     qDebug() << " xMin:" << xMin << " xMax:" << xMax << " xStep:" << xStep;
 
-//    if (!m_colorMap) {
-//        qDebug() << "colorMap is not initialized.";
-//        return;
-//    }
-
-//    QCPColorMapData* data = m_colorMap->data();
-//    for (int xIndex = 0; xIndex < data->keySize(); ++xIndex) {
-//        for (int yIndex = 0; yIndex < data->valueSize(); ++yIndex) {
-//            double x, y;
-//            data->cellToCoord(xIndex, yIndex, &x, &y);
-//            //double value = data->cell(xIndex, yIndex);
-//            // 计算距离
-//            double distance = std::sqrt(std::pow(x - xCoord, 2) + std::pow(y - yCoord, 2));
-
-//            if(distance <= radius) {
-//                indices.push_back(std::make_pair(xIndex, yIndex));
-//                values.push_back(m_outPutData[xIndex][yIndex]);
-//            }
-//            //qDebug() << "Point (" << x << "," << y << ") has value:" << value;
-//        }
-//    }
-
-    // 遍历m_outPutData，找到在指定范围内的数据点
-    for(int i = 0; i < row; ++i) {
-        for(int j = 0; j < col; ++j) {
-            double dataX = xMin + i * xStep + m_xoffset;
-            double dataY = yMin + j * yStep + m_yoffset;
-            //double dataX = m_customPlot_den->xAxis->coordToPixel(xMin + i * xStep);
-            //double dataY = m_customPlot_den->yAxis->coordToPixel(yMin + j * yStep);
-
-            //qDebug() << " dataX:" << dataX << " dataX2:" << dataX2;
-
+    if (!m_colorMap) {
+        qDebug() << "colorMap is not initialized.";
+        return;
+    }
+    QCPColorMapData* data = m_colorMap->data();
+    for (int xIndex = 0; xIndex < data->keySize(); ++xIndex) {
+        for (int yIndex = 0; yIndex < data->valueSize(); ++yIndex) {
+            double x, y;
+            data->cellToCoord(xIndex, yIndex, &x, &y);
+            //double value = data->cell(xIndex, yIndex);
             // 计算距离
-            double distance = std::sqrt(std::pow(dataX - xCoord, 2) + std::pow(dataY - yCoord, 2));
+            double distance = std::sqrt(std::pow(x - xCoord, 2) + std::pow(y - yCoord, 2));
 
             if(distance <= radius) {
-                //qDebug() << "dataX:" << dataX <<" xCoord:" << xCoord
-                //         << " dataY:" << dataY << " yCoord:" << yCoord;
-                indices.push_back(std::make_pair(i, j));
-                values.push_back(m_outPutData[i][j]);
+                indices.push_back(std::make_pair(xIndex, yIndex));
+                values.push_back(m_outPutData[xIndex][yIndex]);
             }
+            //qDebug() << "Point (" << x << "," << y << ") has value:" << value;
         }
     }
+
+    // 遍历m_outPutData，找到在指定范围内的数据点
+//    for(int i = 0; i < row; ++i) {
+//        for(int j = 0; j < col; ++j) {
+//            double dataX = xMin + i * xStep + m_xoffset;
+//            double dataY = yMin + j * yStep + m_yoffset;
+//            //double dataX = m_customPlot_den->xAxis->coordToPixel(xMin + i * xStep);
+//            //double dataY = m_customPlot_den->yAxis->coordToPixel(yMin + j * yStep);
+
+//            //qDebug() << " dataX:" << dataX << " dataX2:" << dataX2;
+
+//            // 计算距离
+//            double distance = std::sqrt(std::pow(dataX - xCoord, 2) + std::pow(dataY - yCoord, 2));
+
+//            if(distance <= radius) {
+//                //qDebug() << "dataX:" << dataX <<" xCoord:" << xCoord
+//                //         << " dataY:" << dataY << " yCoord:" << yCoord;
+//                indices.push_back(std::make_pair(i, j));
+//                values.push_back(m_outPutData[i][j]);
+//            }
+//        }
+//    }
 
 
     // 添加新的元素到容器尾部
@@ -330,8 +330,10 @@ void MainWindow::on_pushButton_readData_clicked()
     if (fileNameLas.isEmpty()) {
         const std::string str_warn = "警告";
         const std::string str_mesg = "未选择文件";
-        QMessageBox::warning(this, fromStdString2QString(str_warn)
-                             ,fromStdString2QString(str_mesg));
+        QMessageBox::warning(this, QString::fromStdString(str_warn)
+                             ,QString::fromStdString(str_mesg));
+        //QMessageBox::warning(this, fromStdString2QString(str_warn)
+        //                     ,fromStdString2QString(str_mesg));
         return;
     }
 
@@ -376,7 +378,7 @@ void MainWindow::on_pushButton_denoisePrc_clicked()
             break;
         }
         case WaveletDenoise: {//小波
-            wavelet3(m_data,outPutData);
+            wavelet3(m_data,outPutData,m_config.waveletLevel);
             break;
         }
         case ZeroPhaseFilter2D: {//零相位滤波
@@ -563,5 +565,62 @@ void MainWindow::on_pushButton_saveData_clicked()
 
     // 保存文件
     saveFile(filePath, m_outPutData);
+}
+
+//导出图像
+void MainWindow::on_pushButton_savePic_clicked()
+{
+    if( nullptr == m_customPlot_den)
+    {
+        const std::string str_warn = "警告";
+        const std::string str_mesg = "图像还绘制";
+        QMessageBox::warning(this, QString::fromStdString(str_warn)
+                             ,QString::fromStdString(str_mesg));
+    }
+
+
+    CustomDepthDialog dialog(this);
+    //dialog.setMinDepth(uiData->getDepthBeginSet3());
+    //dialog.setMaxDepth(uiData->getDepthEndSet3());
+    dialog.setSaveFormat("png");
+    dialog.setSavePath(".");
+    dialog.setFileName("name1");
+
+    if (dialog.exec() == QDialog::Accepted  ) {
+        // 获取对话框中的参数
+        //const double minDepth = dialog.getMinDepth();
+        //const double maxDepth = dialog.getMaxDepth();
+        const double xcale = dialog.getXcale();
+        const double ycale = dialog.getYcale();
+        const QString saveFormat = dialog.getSaveFormat();
+        const QString savePath = dialog.getSavePath();
+        const QString saveFileName = dialog.getFileName();
+
+        //qDebug() << "minDepth:" << minDepth << " maxDepth:" << maxDepth
+        //         << " saveFormat:" << saveFormat << " savePath:" << savePath
+        //         << " saveFileName:" << saveFileName;
+
+        // 设置 QCustomPlot 的 y 轴范围
+        //m_customPlot_den->yAxis->setRange(minDepth, maxDepth);
+
+        // 设置目标图像大小
+        QSize desiredSize(xcale, ycale);
+
+        // 渲染 QCustomPlot 到 QPixmap
+        QPixmap originalPixmap = m_customPlot_den->toPixmap(desiredSize.width(), desiredSize.height());
+
+        // 构建保存路径
+        const QString fullPath = savePath + "/" + saveFileName + "." + saveFormat.toLower();
+
+        // 保存图像
+        if (originalPixmap.save(fullPath))
+        {
+            qDebug() << "Image saved successfully at" << fullPath;
+        }
+        else
+        {
+            qDebug() << "Failed to save image at" << fullPath;
+        }
+    }
 }
 

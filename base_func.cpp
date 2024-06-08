@@ -103,13 +103,20 @@ void Normalize2DVector(std::vector<std::vector<float>>& data) {
 // 辅助函数：将枚举值转换为相应的字符串
 QString denoiseModeToString(DenoiseMode mode) {
     switch (mode) {
-    case SlidingAverageFilter: return fromStdString2QString("滑动平均法滤波"); //QString乱码； QObject::tr --国际化支持 ？
-    case MedianFilter: return fromStdString2QString("中值滤波");
-    case GaussianFilter: return fromStdString2QString("高斯滤波");
-    case WaveletDenoise: return fromStdString2QString("小波去噪");
-    case ZeroPhaseFilter2D: return fromStdString2QString("零相位滤波");
-    case SavitzkyGolayFilter: return fromStdString2QString("Savitzky-Golay滤波");
-    case MadFilter: return fromStdString2QString("mad滤波");
+    case SlidingAverageFilter: return ("滑动平均法滤波"); //QString乱码； QObject::tr --国际化支持 ？
+    case MedianFilter: return ("中值滤波");
+    case GaussianFilter: return ("高斯滤波");
+    case WaveletDenoise: return ("小波去噪");
+    case ZeroPhaseFilter2D: return ("零相位滤波");
+    case SavitzkyGolayFilter: return ("Savitzky-Golay滤波");
+    case MadFilter: return ("mad滤波");
+//    case SlidingAverageFilter: return fromStdString2QString("滑动平均法滤波"); //QString乱码； QObject::tr --国际化支持 ？
+//    case MedianFilter: return fromStdString2QString("中值滤波");
+//    case GaussianFilter: return fromStdString2QString("高斯滤波");
+//    case WaveletDenoise: return fromStdString2QString("小波去噪");
+//    case ZeroPhaseFilter2D: return fromStdString2QString("零相位滤波");
+//    case SavitzkyGolayFilter: return fromStdString2QString("Savitzky-Golay滤波");
+//    case MadFilter: return fromStdString2QString("mad滤波");
     default: return QString();
     }
 }

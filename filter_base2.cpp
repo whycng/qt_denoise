@@ -658,7 +658,8 @@ std::vector<std::vector<float>> ConvertMatrixTo2DVector(const Matrix<double>& ma
 
 //小波3
 void wavelet3(const std::vector<std::vector<float>>& data,
-              std::vector<std::vector<float>>& outData)
+              std::vector<std::vector<float>>& outData,
+              const int& level)
 {
     std::cout << "data row:" << data.size() << " col:" << data.at(0).size() << std::endl;
     std::ofstream fileOri2Ddata("wletOri2Ddata.txt");
@@ -671,7 +672,7 @@ void wavelet3(const std::vector<std::vector<float>>& data,
     const size_t num_rows = static_cast<size_t>(data.size());
     const size_t num_cols = static_cast<size_t>(data.at(0).size());
     // Number of decomposition levels
-    const size_t num_levels = static_cast<size_t>(4);
+    const size_t num_levels = static_cast<size_t>(level); //4
 
     std::vector<double> data1d;
     for (size_t i = 0; i <  num_cols; ++i) { //考虑到矩阵是按列存储的！！

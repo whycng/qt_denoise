@@ -55,7 +55,8 @@ void thresholdFilter(std::vector<std::vector<float>>& data ,
 void normalize(std::vector<std::vector<float>>& data);
 //小波3
 void wavelet3(const std::vector<std::vector<float>>& data,
-              std::vector<std::vector<float>>& outData);
+              std::vector<std::vector<float>>& outData,
+              const int& level);
 // 将 const std::vector<std::vector<float>>& data 转换为 std::vector<std::vector<double>>
 std::vector<std::vector<double>> convertData(const std::vector<std::vector<float>>& data);
 // MAD-based outlier detection and replace with median
