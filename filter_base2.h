@@ -63,7 +63,7 @@ std::vector<std::vector<double>> convertData(const std::vector<std::vector<float
 void madFilter(const std::vector<std::vector<float>>& input,
                std::vector<std::vector<float>>& output) ;
 // Helper functions
-float median(std::vector<float> v);
+float medianHelp(std::vector<float>& data);
 // Savitzky-Golay·¨a[0] -> 1/35 (-3 x[-2] + 12 x[-1] + 17 x[0] + 12 x[1] - 3 x[2])
 void applySavitzkyGolay(const std::vector<std::vector<float>>& input,
                         std::vector<std::vector<float>>& output,

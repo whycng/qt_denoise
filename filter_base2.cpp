@@ -576,55 +576,103 @@ void applySavitzkyGolay(const std::vector<std::vector<float>>& input,
     }
 }
 
-
-
-
-// Helper functions
-float median(std::vector<float> v) {
-    size_t n = v.size() / 2;
-    nth_element(v.begin(), v.begin() + n, v.end());
-    if (v.size() % 2 == 1)
-        return v[n];
-    else
-        return (v[n - 1] + v[n]) / 2.0;
+float medianHelp(std::vector<float>& data) {
+    size_t size = data.size();
+    if (size == 0) return 0.0;
+    std::sort(data.begin(), data.end());
+    if (size % 2 == 0) {
+        return (data[size / 2 - 1] + data[size / 2]) / 2.0;
+    } else {
+        return data[size / 2];
+    }
 }
 
-// MAD-based outlier detection and replace with median
 void madFilter(const std::vector<std::vector<float>>& input, std::vector<std::vector<float>>& output) {
     int rows = input.size();
     if (rows == 0) return;
     int cols = input[0].size();
 
-    output.resize(rows);
+    // 初始化 output 的大小
+    output.resize(rows, std::vector<float>(cols, 0.0f));
+
     std::vector<float> colData(rows), absDeviations(rows);
 
     for (int col = 0; col < cols; ++col) {
-        // Extract column into a vector
+        // 提取列数据到向量中
         for (int row = 0; row < rows; ++row) {
             colData[row] = input[row][col];
-            output[row].resize(cols);
         }
 
-        float colMedian = median(colData);
-        // Compute absolute deviations from median
+        float colMedian = medianHelp(colData);
+
+        // 计算偏离中位数的绝对偏差
         for (int i = 0; i < rows; ++i) {
-            absDeviations[i] = fabs(colData[i] - colMedian);
+            absDeviations[i] = std::fabs(colData[i] - colMedian);
         }
 
-        float mad = median(absDeviations);
+        float mad = medianHelp(absDeviations);
         float threshold = 3 * mad;
 
-        // Filter outliers
+        // 过滤离群值
         for (int i = 0; i < rows; ++i) {
             if (absDeviations[i] > threshold) {
-                output[i][col] = colMedian; // Replace outlier with column median
-            }
-            else {
+                output[i][col] = colMedian; // 用列中位数替换离群值
+            } else {
                 output[i][col] = input[i][col];
             }
         }
     }
 }
+
+
+
+
+// Helper functions
+//float median(std::vector<float> v) {
+//    size_t n = v.size() / 2;
+//    nth_element(v.begin(), v.begin() + n, v.end());
+//    if (v.size() % 2 == 1)
+//        return v[n];
+//    else
+//        return (v[n - 1] + v[n]) / 2.0;
+//}
+
+// MAD-based outlier detection and replace with median
+//void madFilter(const std::vector<std::vector<float>>& input, std::vector<std::vector<float>>& output) {
+//    int rows = input.size();
+//    if (rows == 0) return;
+//    int cols = input[0].size();
+
+//    output.resize(rows);
+//    std::vector<float> colData(rows), absDeviations(rows);
+
+//    for (int col = 0; col < cols; ++col) {
+//        // Extract column into a vector
+//        for (int row = 0; row < rows; ++row) {
+//            colData[row] = input[row][col];
+//            output[row].resize(cols);
+//        }
+
+//        float colMedian = median(colData);
+//        // Compute absolute deviations from median
+//        for (int i = 0; i < rows; ++i) {
+//            absDeviations[i] = fabs(colData[i] - colMedian);
+//        }
+
+//        float mad = median(absDeviations);
+//        float threshold = 3 * mad;
+
+//        // Filter outliers
+//        for (int i = 0; i < rows; ++i) {
+//            if (absDeviations[i] > threshold) {
+//                output[i][col] = colMedian; // Replace outlier with column median
+//            }
+//            else {
+//                output[i][col] = input[i][col];
+//            }
+//        }
+//    }
+//}
 
 
 
