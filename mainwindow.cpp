@@ -410,7 +410,7 @@ void MainWindow::updateRedCircle() {
 
 //鼠标按下事件处理
 void MainWindow::onMousePress(QMouseEvent *event) {
-    if (event->button() == Qt::RightButton) {
+    if (event->button() == Qt::RightButton) { //鼠标右键
         //m_customPlot_den->setCurrentLayer("TST");
         m_selecting = true;
         m_startPoint = event->pos();
@@ -420,6 +420,10 @@ void MainWindow::onMousePress(QMouseEvent *event) {
         {
             denoiseDataInCircle(event->pos());
         }
+    }
+    if (event->button() == Qt::LeftButton) // 鼠标左键
+    {
+
     }
 }
 
@@ -438,6 +442,10 @@ void MainWindow::onMouseMove(QMouseEvent *event) {
         {
             denoiseDataSlideCircle(event->pos());
         }
+    }
+    if (event->button() == Qt::LeftButton) // 鼠标左键
+    {
+
     }
 }
 
@@ -470,30 +478,34 @@ void MainWindow::onMouseRelease(QMouseEvent *event) {
 
         //问题来了，放入plot_den？--tmp
         //先生成一个新的m_customPlot_den，再填入hLayout
-//        if( nullptr != m_customPlot_den)
-//        {
-//            delete m_customPlot_den;
-//            m_customPlot_den = nullptr;
-//        }
-//        m_customPlot_den = new QCustomPlot();
-//        //布局设置
-//        // 检查g_custLayout_priWell中是否存在小部件
-//        QLayoutItem* existingItem = hLayout->takeAt(0);
-//        if (existingItem) {
-//            QWidget* existingWidget = existingItem->widget();
-//            if (existingWidget) {
-//                // 删除已存在的小部件
-//                delete existingWidget;
-//            }
-//            delete existingItem;
-//        }
-//        hLayout->addWidget(m_customPlot_den);
-
-
+        /*
+        if( nullptr != m_customPlot_den)
+        {
+            delete m_customPlot_den;
+            m_customPlot_den = nullptr;
+        }
+        m_customPlot_den = new QCustomPlot();
+        //布局设置
+        // 检查g_custLayout_priWell中是否存在小部件
+        QLayoutItem* existingItem = hLayout->takeAt(0);
+        if (existingItem) {
+            QWidget* existingWidget = existingItem->widget();
+            if (existingWidget) {
+                // 删除已存在的小部件
+                delete existingWidget;
+            }
+            delete existingItem;
+        }
+        hLayout->addWidget(m_customPlot_den);
+*/
 
         plot_den(m_outPutData,hLayout,vmax,vmin,m_customPlot_den );
         qDebug() << "<onMouseRelease> shi fang wan bi m_endPoint:" << m_endPoint;
         m_customPlot_den->setCurrentLayer("main");
+    }
+    if (event->button() == Qt::LeftButton) // 鼠标左键
+    {
+
     }
 }
 
