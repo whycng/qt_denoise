@@ -17,11 +17,18 @@ MainWindow::MainWindow(QWidget *parent)
     // 初始化 comboBox_denoiseMode 下拉框
     // 假设 ui 是已经初始化的 UI 指针
     initComboBoxDenoiseMode(ui->comboBox_denoiseMode);
+    initComboBoxInteractionMode(ui->comboBox_InteractionMode);
     // 初始默认值
     ui->lineEdit_vmax->setText("0.8");
     ui->lineEdit_vmin->setText("0.2");
     ui->lineEdit_threshold->setText("0.1");
     ui->lineEdit_radius->setText("0.5");
+    ui->checkBox_rightClick->setChecked(Qt::Unchecked);
+    ui->checkBox_rightSlider->setChecked(Qt::Unchecked);
+    ui->checkBox_whichone->setChecked(Qt::Checked);
+    ui->comboBox_calDenoiseVal->addItem("均值去噪");
+    ui->comboBox_calDenoiseVal->addItem("中值去噪");
+    ui->comboBox_calDenoiseVal->addItem("高斯滤波去噪");
     m_radius = 10;
 
     m_config.slidingWindowSize = 3;//滑动滤波，窗口大小
@@ -69,6 +76,7 @@ MainWindow::~MainWindow()
     delete ui;
 }
 
+//绘制图像
 void MainWindow::plot_den(const std::vector<std::vector<float>>& outData,QHBoxLayout* hLayout
               ,const float& vmax, const float& vmin
               ,QCustomPlot* customPlot_den )
@@ -117,7 +125,8 @@ void MainWindow::plot_den(const std::vector<std::vector<float>>& outData,QHBoxLa
 }
 
 
-//交互去噪
+
+//交互去噪 --点值 点击去噪
 void MainWindow::denoiseDataInCircle(QPoint mousePos) {
 
     const float vmax = ui->lineEdit_vmax->text().toFloat();
@@ -138,41 +147,161 @@ void MainWindow::denoiseDataInCircle(QPoint mousePos) {
     const int col = m_outPutData.at(0).size();
 
     // 获取ColorMap的实际尺寸范围
-    const double xMin = m_customPlot_den->xAxis->range().lower;
-    const double xMax = m_customPlot_den->xAxis->range().upper;
-    const double yMin = m_customPlot_den->yAxis->range().lower;
-    const double yMax = m_customPlot_den->yAxis->range().upper;
+//    const double xMin = m_customPlot_den->xAxis->range().lower;
+//    const double xMax = m_customPlot_den->xAxis->range().upper;
+//    const double yMin = m_customPlot_den->yAxis->range().lower;
+//    const double yMax = m_customPlot_den->yAxis->range().upper;
     const double xrange = m_customPlot_den->xAxis->range().size();
 
-    const double xStep = (xMax - xMin) / (row - 1);
-    const double yStep = (yMax - yMin) / (col - 1);
+//    const double xStep = (xMax - xMin) / (row - 1);
+//    const double yStep = (yMax - yMin) / (col - 1);
 
     const double scaleX = xrange/m_xrange;
     const float radius = ui->lineEdit_radius->text().toFloat() * scaleX;
 
-    qDebug() << " xMin:" << xMin << " xMax:" << xMax << " xStep:" << xStep;
+    //qDebug() << " xMin:" << xMin << " xMax:" << xMax << " xStep:" << xStep;
 
     if (!m_colorMap) {
         qDebug() << "colorMap is not initialized.";
         return;
     }
     QCPColorMapData* data = m_colorMap->data();
-    for (int xIndex = 0; xIndex < data->keySize(); ++xIndex) {
-        for (int yIndex = 0; yIndex < data->valueSize(); ++yIndex) {
+
+    int keySize = data->keySize();
+    int valueSize = data->valueSize();
+
+    int xMin, xMax, yMin, yMax;
+    data->coordToCell(xCoord - radius, yCoord - radius, &xMin, &yMin);
+    data->coordToCell(xCoord + radius, yCoord + radius, &xMax, &yMax);
+
+    // 确保索引在有效范围内
+    int xMinIndex = std::max(0, xMin);
+    int xMaxIndex = std::min(keySize - 1, xMax);
+    int yMinIndex = std::max(0, yMin);
+    int yMaxIndex = std::min(valueSize - 1, yMax);
+
+    //获取权重模式
+    WeightMode wmode = static_cast<WeightMode>(ui->comboBox_InteractionMode->currentIndex());
+
+    //获取somenoise
+    // 计算去噪值
+    double someDenoisedValue = 0.0;
+    const bool inverseWeight = ui->checkBox_whichone->isChecked();
+    const int calmode = ui->comboBox_calDenoiseVal->currentIndex();
+    qDebug() << "calmode:" << calmode;
+    if (calmode == 0) {
+        // 均值去噪
+        double sum = 0.0;
+        int count = 0;
+        for (int xi = xMinIndex; xi <= xMaxIndex; ++xi) {
+            for (int yi = yMinIndex; yi <= yMaxIndex; ++yi) {
+                double x_inner, y_inner;
+                data->cellToCoord(xi, yi, &x_inner, &y_inner);
+                double dist_inner = std::sqrt(std::pow(x_inner - xCoord, 2) + std::pow(y_inner - yCoord, 2));
+                if (dist_inner <= radius) {
+                    sum += m_outPutData[xi][yi];
+                    count++;
+                }
+            }
+        }
+        someDenoisedValue = (count > 0) ? (sum / count) : 0.0;
+    } else if (calmode == 1) {
+        // 中值去噪
+        std::vector<double> neighborhoodValues;
+        for (int xi = xMinIndex; xi <= xMaxIndex; ++xi) {
+            for (int yi = yMinIndex; yi <= yMaxIndex; ++yi) {
+                double x_inner, y_inner;
+                data->cellToCoord(xi, yi, &x_inner, &y_inner);
+                double dist_inner = std::sqrt(std::pow(x_inner - xCoord, 2) + std::pow(y_inner - yCoord, 2));
+                if (dist_inner <= radius) {
+                    neighborhoodValues.push_back(m_outPutData[xi][yi]);
+                }
+            }
+        }
+        if (!neighborhoodValues.empty()) {
+            std::sort(neighborhoodValues.begin(), neighborhoodValues.end());
+            someDenoisedValue = neighborhoodValues[neighborhoodValues.size() / 2];
+        }
+    } else if (calmode == 2) {
+        // 高斯滤波去噪
+        double sum = 0.0;
+        double weightSum = 0.0;
+        for (int xi = xMinIndex; xi <= xMaxIndex; ++xi) {
+            for (int yi = yMinIndex; yi <= yMaxIndex; ++yi) {
+                double x_inner, y_inner;
+                data->cellToCoord(xi, yi, &x_inner, &y_inner);
+                double dist_inner = std::sqrt(std::pow(x_inner - xCoord, 2) + std::pow(y_inner - yCoord, 2));
+                if (dist_inner <= radius) {
+                    double weight = std::exp(-std::pow(dist_inner / radius, 2));
+                    sum += m_outPutData[xi][yi] * weight;
+                    weightSum += weight;
+                }
+            }
+        }
+        someDenoisedValue = (weightSum > 0) ? (sum / weightSum) : 0.0;
+    }
+    qDebug() << "someDenoisedValue:" << someDenoisedValue;
+
+    for (int xIndex = xMinIndex; xIndex <= xMaxIndex; ++xIndex) {
+        for (int yIndex = yMinIndex; yIndex <= yMaxIndex; ++yIndex) {
             double x, y;
             data->cellToCoord(xIndex, yIndex, &x, &y);
-            //double value = data->cell(xIndex, yIndex);
-            // 计算距离
             double distance = std::sqrt(std::pow(x - xCoord, 2) + std::pow(y - yCoord, 2));
 
-            if(distance <= radius) {
+            if (distance <= radius) {
                 indices.push_back(std::make_pair(xIndex, yIndex));
                 values.push_back(m_outPutData[xIndex][yIndex]);
+
+                double weight = 1;
+
+                switch (wmode) {
+                case WeightMode::NoWeight:
+                    weight = 1;  // NoWeight 模式下，权重为1
+                    break;
+                case WeightMode::LinearWeight:
+                     weight = inverseWeight ? (distance / radius) : (1.0 - (distance / radius));  // 线性权重
+                    break;
+                case WeightMode::ExponentialWeight:
+                    weight = inverseWeight ? (1 - std::exp(-distance / radius)) : std::exp(-distance / radius); // 指数衰减权重
+                    break;
+                case WeightMode::GaussianWeight:
+                    weight = inverseWeight ? (1 - std::exp(-std::pow(distance / radius, 2))) : std::exp(-std::pow(distance / radius, 2)); // 高斯权重
+                    break;
+                default:
+                    weight = 1;  // 默认权重为1，确保程序不会崩溃
+                    break;
+                }
+
+                m_outPutData[xIndex][yIndex] = m_outPutData[xIndex][yIndex] * weight + someDenoisedValue * (1 - weight);
+
             }
-            //qDebug() << "Point (" << x << "," << y << ") has value:" << value;
         }
     }
 
+    //------------------------------------------------------------------------
+
+    //这种方法可以，但遍历整个网格效率低下
+//    for (int xIndex = 0; xIndex < data->keySize(); ++xIndex) {
+//        for (int yIndex = 0; yIndex < data->valueSize(); ++yIndex) {
+//            double x, y;
+//            data->cellToCoord(xIndex, yIndex, &x, &y);
+//            //double value = data->cell(xIndex, yIndex);
+//            // 计算距离
+//            double distance = std::sqrt(std::pow(x - xCoord, 2) + std::pow(y - yCoord, 2));
+
+//            if(distance <= radius) {
+//                indices.push_back(std::make_pair(xIndex, yIndex));
+//                values.push_back(m_outPutData[xIndex][yIndex]);
+//            }
+//            //qDebug() << "Point (" << x << "," << y << ") has value:" << value;
+//        }
+//    }
+
+
+
+    //-----------------------------------------------------------------------------
+
+    //这种方式不能解决移动和缩放后进行交互去噪的问题，位置变化了
     // 遍历m_outPutData，找到在指定范围内的数据点
 //    for(int i = 0; i < row; ++i) {
 //        for(int j = 0; j < col; ++j) {
@@ -195,39 +324,75 @@ void MainWindow::denoiseDataInCircle(QPoint mousePos) {
 //        }
 //    }
 
-
     // 添加新的元素到容器尾部
     g_recentVal.push_back({indices,values});
 
-
-    // 按值降序排列
-    std::vector<size_t> indicesSorted(values.size());
-    std::iota(indicesSorted.begin(), indicesSorted.end(), 0);
-    std::sort(indicesSorted.begin(), indicesSorted.end(), [&values](size_t a, size_t b) {
-        return values[a] > values[b];
-    });
-
-    // 选择前10%以及后10%的数据点作为噪点
-    size_t numNoisePoints = indicesSorted.size() * threshold;//0.1
-    //qDebug() << " 阈值个数 numNoisePoints:" << numNoisePoints << " 总数 indicesSorted.size():"
-    //         << indicesSorted.size();
-    int sum_test = 0;
-    //for (size_t k = numNoisePoints; k < indicesSorted.size(); ++k) {
-    for (size_t k = 0; k < indicesSorted.size(); ++k) {
-        if( k >= numNoisePoints && k <= indicesSorted.size() - numNoisePoints)
-            continue;
-        ++sum_test;
-
-        int i = indices[indicesSorted[k]].first;
-        int j = indices[indicesSorted[k]].second;
-        m_outPutData[i][j] = 0.5;
+    //阈值去噪
+    if( WeightMode::NoWeight == wmode)
+    {
+        theshorldDenoise(values,indices, threshold, m_outPutData );
     }
-    //qDebug() << "去除噪点 sum_test:" << sum_test;
 
-    // 刷新QCustomPlot以显示更新后的数据
-    //plot_den(m_outPutData,hLayout,vmax,vmin,m_customPlot_den);
 
 }
+
+//交互去噪 --滑动去噪 先记录坐标点
+void MainWindow::denoiseDataSlideCircle(QPoint mousePos) {
+
+    // 将鼠标像素坐标转换为轴坐标
+    double xCoord = m_customPlot_den->xAxis->pixelToCoord(mousePos.x());
+    double yCoord = m_customPlot_den->yAxis->pixelToCoord(mousePos.y());
+
+    //qDebug() << " xCoord:" << xCoord << " yCoord:" << yCoord;
+
+    // 收集选中数据点的值及其索引
+    std::vector<std::pair<int, int>> indices;
+    std::vector<float> values;
+
+    const double xrange = m_customPlot_den->xAxis->range().size();
+
+    const double scaleX = xrange/m_xrange;
+    const float radius = ui->lineEdit_radius->text().toFloat() * scaleX;
+
+    if (!m_colorMap) {
+        qDebug() << "colorMap is not initialized.";
+        return;
+    }
+    QCPColorMapData* data = m_colorMap->data();
+
+    int keySize = data->keySize();
+    int valueSize = data->valueSize();
+
+    int xMin, xMax, yMin, yMax;
+    data->coordToCell(xCoord - radius, yCoord - radius, &xMin, &yMin);
+    data->coordToCell(xCoord + radius, yCoord + radius, &xMax, &yMax);
+
+    // 确保索引在有效范围内
+    int xMinIndex = std::max(0, xMin);
+    int xMaxIndex = std::min(keySize - 1, xMax);
+    int yMinIndex = std::max(0, yMin);
+    int yMaxIndex = std::min(valueSize - 1, yMax);
+
+    for (int xIndex = xMinIndex; xIndex <= xMaxIndex; ++xIndex) {
+        for (int yIndex = yMinIndex; yIndex <= yMaxIndex; ++yIndex) {
+            double x, y;
+            data->cellToCoord(xIndex, yIndex, &x, &y);
+            double distance = std::sqrt(std::pow(x - xCoord, 2) + std::pow(y - yCoord, 2));
+
+            if (distance <= radius) {
+                indices.push_back(std::make_pair(xIndex, yIndex));
+                values.push_back(m_outPutData[xIndex][yIndex]);
+                // 添加新元素，用来鼠标释放的时候排序计算处理
+                g_slidIndices.push_back(std::make_pair(xIndex, yIndex));
+                g_slidValues.push_back(m_outPutData[xIndex][yIndex]);
+            }
+        }
+    }
+    // 添加新的元素到容器尾部 用来恢复上一步
+    g_recentVal.push_back({indices,values});
+
+}
+
 
 void MainWindow::updateRedCircle() {
     //    if (!m_customPlot_den->viewport().contains(m_mousePos)) {
@@ -250,8 +415,11 @@ void MainWindow::onMousePress(QMouseEvent *event) {
         m_selecting = true;
         m_startPoint = event->pos();
         m_endPoint = m_startPoint;
-        //denoiseDataInCircle(event->pos());
-        //qDebug() << "<onMousePress> m_startPoint:" << m_startPoint;
+        //如果勾选了鼠标右键单击去噪模式，则执行
+        if( Qt::Checked == ui->checkBox_rightClick->checkState())
+        {
+            denoiseDataInCircle(event->pos());
+        }
     }
 }
 
@@ -265,8 +433,11 @@ void MainWindow::onMouseMove(QMouseEvent *event) {
         // Update mouse position and redraw the red circle
         m_mousePos = event->pos();
         //updateRedCircle(); --bug
-        denoiseDataInCircle(event->pos());
-        //m_customPlot_den->replot(); // Trigger replot to update the plot
+        //如果勾选了鼠标右键点击并滑动去噪模式，则执行
+        if( Qt::Checked == ui->checkBox_rightSlider->checkState())
+        {
+            denoiseDataSlideCircle(event->pos());
+        }
     }
 }
 
@@ -290,6 +461,12 @@ void MainWindow::onMouseRelease(QMouseEvent *event) {
         g_recentVal.clear();
         qDebug() << "PUSH_BACK g_BackVal size:" << g_BackVal.size();
 
+        //处理滑动去噪那部分的值
+        const float threshold = ui->lineEdit_threshold->text().toFloat();
+        theshorldDenoise(g_slidValues,g_slidIndices, threshold, m_outPutData);
+        //清空
+        g_slidIndices.clear();
+        g_slidValues.clear();
 
         //问题来了，放入plot_den？--tmp
         //先生成一个新的m_customPlot_den，再填入hLayout

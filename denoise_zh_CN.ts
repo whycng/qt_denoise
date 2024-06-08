@@ -46,7 +46,8 @@
     </message>
     <message>
         <location filename="mainwindow.ui" line="59"/>
-        <source>去噪模式</source>
+        <source>常规去噪模式</source>
+        <oldsource>去噪模式</oldsource>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -90,27 +91,52 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="327"/>
+        <location filename="mainwindow.ui" line="172"/>
+        <source>交互去噪模式</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="mainwindow.ui" line="182"/>
+        <source>点击交互</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="mainwindow.ui" line="189"/>
+        <source>滑动交互</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="mainwindow.ui" line="196"/>
+        <source>去除噪声计算模式</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="mainwindow.ui" line="206"/>
+        <source>中心or边缘</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="mainwindow.cpp" line="504"/>
         <source>LAS Files (*.las);;All Files (*.*)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="329"/>
+        <location filename="mainwindow.cpp" line="506"/>
         <source>打开LAS文件</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="555"/>
+        <location filename="mainwindow.cpp" line="732"/>
         <source>txt file (*.txt);;all file (*)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="559"/>
+        <location filename="mainwindow.cpp" line="736"/>
         <source>warn</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="559"/>
+        <location filename="mainwindow.cpp" line="736"/>
         <source>no choose file</source>
         <translation type="unfinished"></translation>
     </message>

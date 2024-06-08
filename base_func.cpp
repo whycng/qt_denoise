@@ -1,8 +1,65 @@
 ﻿
 #include "base_func.h"
+#include "mainwindow.h"
 #include "qcustomplot.h"
 #include "qtextcodec.h"
 #include <QDebug>
+
+//均值去噪计算需要的 smnoise
+//double calculateMeanValue(int xMinIndex, int xMaxIndex,
+//                          int yMinIndex, int yMaxIndex,
+//                          double radius,
+//                          double xCoord, double yCoord,
+//                        const std::vector<std::vector<float>>& outPutData,
+//                        const QCPColorMapData*& data) {
+//    double sum = 0.0;
+//    int count = 0;
+
+//    for (int xIndex = xMinIndex; xIndex <= xMaxIndex; ++xIndex) {
+//        for (int yIndex = yMinIndex; yIndex <= yMaxIndex; ++yIndex) {
+//            double x, y;
+//            data->cellToCoord(xIndex, yIndex, &x, &y);
+//            double distance = std::sqrt(std::pow(x - xCoord, 2) + std::pow(y - yCoord, 2));
+
+//            if (distance <= radius) {
+//                sum += outPutData[xIndex][yIndex];
+//                count++;
+//            }
+//        }
+//    }
+
+//    return (count > 0) ? (sum / count) : 0.0;
+//}
+
+
+//阈值去噪
+void theshorldDenoise(const std::vector<float>& values,
+                      const std::vector<std::pair<int, int>>& indices,
+                      const float& threshold,
+                      std::vector<std::vector<float>>& m_outPutData
+                       )
+{
+    std::vector<size_t> indicesSorted(values.size());
+    std::iota(indicesSorted.begin(), indicesSorted.end(), 0);
+    std::sort(indicesSorted.begin(), indicesSorted.end(), [&values](size_t a, size_t b) {
+        return values[a] > values[b];
+    });
+
+    // 选择前 %以及后 %的数据点作为噪点
+    size_t numNoisePoints = indicesSorted.size() * threshold;//0.1
+    //qDebug() << " 阈值个数 numNoisePoints:" << numNoisePoints << " 总数 indicesSorted.size():"
+    //         << indicesSorted.size() << " threshold:" << threshold;
+    //int sum_test = 0;
+    for (size_t k = 0; k < indicesSorted.size(); ++k) {
+        if( k >= numNoisePoints && k <= indicesSorted.size() - numNoisePoints)
+            continue;
+        //++sum_test;
+
+        int i = indices[indicesSorted[k]].first;
+        int j = indices[indicesSorted[k]].second;
+        m_outPutData[i][j] = 0.5;
+    }
+}
 
 //彻底解决中文路径问题
 // QString转 std::string ,  std转QString
@@ -125,5 +182,21 @@ QString denoiseModeToString(DenoiseMode mode) {
 void initComboBoxDenoiseMode(QComboBox *comboBox) {
     for (int i = 0; i < DenoiseModeCount; ++i) {
         comboBox->addItem(denoiseModeToString(static_cast<DenoiseMode>(i)));
+    }
+}
+
+// 初始化 comboBox_InteractionMode 下拉框
+void initComboBoxInteractionMode(QComboBox *comboBox) {
+    // 创建一个 map 来存储权重模式和描述
+    std::map<WeightMode, std::string> weightModes = {
+                                                 {NoWeight, "无权重"},
+                                                 {LinearWeight, "线性权重"},
+                                                 {ExponentialWeight, "指数衰减权重"},
+                                                 {GaussianWeight, "高斯权重"}
+    };
+
+    // 遍历 map 并添加到 comboBox
+    for (const auto &mode : weightModes) {
+        comboBox->addItem(QString::fromStdString(mode.second), mode.first);
     }
 }

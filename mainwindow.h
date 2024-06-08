@@ -13,7 +13,6 @@ struct RecentGraphChangedValue{
     std::vector<float> values;//对应的值
 };
 
-
 QT_BEGIN_NAMESPACE
 namespace Ui { class MainWindow; }
 QT_END_NAMESPACE
@@ -42,6 +41,7 @@ public:
 private:
     void updateRedCircle() ;
     void denoiseDataInCircle(QPoint mousePos);
+    void denoiseDataSlideCircle(QPoint mousePos);
 private slots:
 
     /*void onXAxisRangeChanged(double lower, double upper)
@@ -115,6 +115,8 @@ private:
     QSet<QPointF> m_selectedPoints;
     int m_radius;
     std::vector<RecentGraphChangedValue> g_recentVal;
+    std::vector<float> g_slidValues;
+    std::vector<std::pair<int, int>> g_slidIndices;
     std::vector<std::vector<RecentGraphChangedValue>> g_BackVal;
     //int m_nowStep;
     double m_xrange;

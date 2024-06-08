@@ -17,6 +17,22 @@ enum DenoiseMode {
     MadFilter,//mad滤波
     DenoiseModeCount // 用于获取枚举的数量
 };
+// 定义权重模式的枚举类型
+enum WeightMode {
+    NoWeight,
+    LinearWeight,
+    ExponentialWeight,
+    GaussianWeight
+};
+
+
+void initComboBoxInteractionMode(QComboBox *comboBox);
+void theshorldDenoise(const std::vector<float>& values,
+                      const std::vector<std::pair<int, int>>& indices,
+                      const float& threshold,
+                      std::vector<std::vector<float>>& m_outPutData
+                       );
+
 std::string fromQString2stdString(const QString& str);
 QString fromStdString2QString(const std::string& str);
 
