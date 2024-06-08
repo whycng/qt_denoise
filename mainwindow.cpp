@@ -592,6 +592,15 @@ void MainWindow::onMousePress(QMouseEvent *event) {
         if( Qt::Checked == ui->checkBox_rightClick->checkState())
         {
             denoiseDataInCircle(event->pos());
+            //压入上一步，清空g_recentVal
+            qDebug() << "onMouseRelease g_recentVal size:" << g_recentVal.size();
+            g_BackVal.push_back(g_recentVal);
+            if (g_BackVal.size() == 50)
+            {
+                g_BackVal.pop_back();
+            }
+            g_recentVal.clear();
+            qDebug() << "PUSH_BACK g_BackVal size:" << g_BackVal.size();
             //绘制
             plot_den(m_outPutData,hLayout,vmax,vmin,m_customPlot_den,g_rectMode);
         }
@@ -838,8 +847,9 @@ void MainWindow::on_pushButton_readData_clicked()
     if (fileNameLas.isEmpty()) {
         const std::string str_warn = "警告";
         const std::string str_mesg = "未选择文件";
-        QMessageBox::warning(this, QString::fromStdString(str_warn)
-                             ,QString::fromStdString(str_mesg));
+        qDebug() << "<ERROR> fileNameLas.isEmpty()";
+        //QMessageBox::warning(this, QString::fromStdString(str_warn)
+        //                     ,QString::fromStdString(str_mesg));
         //QMessageBox::warning(this, fromStdString2QString(str_warn)
         //                     ,fromStdString2QString(str_mesg));
         return;
