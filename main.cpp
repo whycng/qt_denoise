@@ -39,6 +39,24 @@ int main(int argc, char *argv[])
     w.show();
 
 
+//    std::vector<std::vector<float>> input = {
+//        {1.0, 2.0, 3.0},
+//        {4.0, 100.0, 6.0},
+//        {7.0, 8.0, 9.0}
+//    };
+
+//    std::vector<std::vector<float>> output;
+//    madFilter(input, output,3);
+
+//    // 输出结果
+//    for (const auto& row : output) {
+//        for (float value : row) {
+//            std::cout << value << " ";
+//        }
+//        std::cout << std::endl;
+//    }
+
+
 
 
     // Example input

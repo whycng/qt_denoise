@@ -163,7 +163,7 @@ c.鼠标左键选择矩形框去噪
       <item>
        <layout class="QVBoxLayout" name="verticalLayout" stretch="1,100">
         <item>
-         <layout class="QHBoxLayout" name="horizontalLayout_3" stretch="0,0,0,0,0,0,0,0,0,0,0">
+         <layout class="QHBoxLayout" name="horizontalLayout_3" stretch="0,0,0,0,0,0,0,0,0,0,0,0">
           <item>
            <widget class="QPushButton" name="pushButton_back">
             <property name="text">
@@ -175,6 +175,13 @@ c.鼠标左键选择矩形框去噪
            <widget class="QPushButton" name="pushButton_oriScale">
             <property name="text">
              <string>恢复初始大小</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QPushButton" name="pushButton_oriPic">
+            <property name="text">
+             <string>原始图像</string>
             </property>
            </widget>
           </item>

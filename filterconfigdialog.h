@@ -19,7 +19,7 @@ struct FilterConfig {
     std::vector<float> zeroPhaseCoefficients;//零相位滤波
     int savitzkyGolayWindowSize;//savitzkyGolay
     int savitzkyGolayPolynomialOrder;//savitzkyGolay
-    //float madThreshold;//mad滤波
+    float madThreshold;//mad滤波  倍数
 
 };
 
@@ -38,7 +38,7 @@ private:
     QSpinBox *waveletLevelSpinBox;
     QSpinBox *savitzkyGolayWindowSizeSpinBox;
     QSpinBox *savitzkyGolayPolynomialOrderSpinBox;
-    //QDoubleSpinBox *madThresholdSpinBox; //不需要
+    QDoubleSpinBox *madThresholdSpinBox;
 };
 
 //ui的方式

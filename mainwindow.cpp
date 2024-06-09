@@ -41,6 +41,7 @@ MainWindow::MainWindow(QWidget *parent)
     m_config.zeroPhaseCoefficients = { 0.25f, 0.5f, 0.25f };//零相位滤波
     m_config.savitzkyGolayWindowSize = 5;//savitzkyGolay
     m_config.savitzkyGolayPolynomialOrder = 2 ;//savitzkyGolay
+    m_config.madThreshold = 3.0;//mad
 
     //qcustomplot框
     hLayout = new QHBoxLayout(ui->widget_pic);
@@ -63,6 +64,10 @@ MainWindow::MainWindow(QWidget *parent)
     ui->lineEdit_radius->setValidator(validator2);
 
     connect(this,&MainWindow::progressUpdate,this,&MainWindow::onProgressUpdate);
+
+//    connect(m_customPlot_den, &QCustomPlot::mousePress, this, &MainWindow::onMousePress);
+//    connect(m_customPlot_den, &QCustomPlot::mouseMove, this, &MainWindow::onMouseMove);
+//    connect(m_customPlot_den, &QCustomPlot::mouseRelease, this, &MainWindow::onMouseRelease);
 
 
 //    // Enable mouse tracking to capture move events even when no button is pressed
@@ -321,7 +326,8 @@ void MainWindow::denoiseDataInCircle(QPoint mousePos) {
                     break;
                 }
 
-                m_outPutData[xIndex][yIndex] = m_outPutData[xIndex][yIndex] * weight + someDenoisedValue * (1 - weight);
+                m_outPutData[xIndex][yIndex] = m_outPutData[xIndex][yIndex] * weight
+                                               + someDenoisedValue * (1 - weight);
 
             }
         }
@@ -726,7 +732,7 @@ void MainWindow::onMouseRelease(QMouseEvent *event) {
 */
 
         qDebug() << "<onMouseRelease> shi fang wan bi m_endPoint:" << m_endPoint;
-        m_customPlot_den->setCurrentLayer("main");
+        //m_customPlot_den->setCurrentLayer("main");
 
         //绘制
         plot_den(m_outPutData,hLayout,vmax,vmin,m_customPlot_den,g_rectMode);
@@ -764,14 +770,14 @@ void MainWindow::onMouseRelease(QMouseEvent *event) {
         //m_customPlot_den->replot();
 
         //压入上一步，清空g_recentVal
-        qDebug() << "onMouseRelease g_recentVal size:" << g_recentVal.size();
+        //qDebug() << "<释放>onMouseRelease g_recentVal size:" << g_recentVal.size();
         g_BackVal.push_back(g_recentVal);
         if (g_BackVal.size() == 50)
         {
             g_BackVal.pop_back();
         }
         g_recentVal.clear();
-        qDebug() << "PUSH_BACK g_BackVal size:" << g_BackVal.size();
+        qDebug() << "<释放>PUSH_BACK g_BackVal size:" << g_BackVal.size();
 
         //绘制
         plot_den(m_outPutData,hLayout,vmax,vmin,m_customPlot_den,g_rectMode);
@@ -873,6 +879,38 @@ void MainWindow::on_pushButton_readData_clicked()
 
     //数据归一化
     Normalize2DVector(m_data);
+
+    const float vmax = ui->lineEdit_vmax->text().toFloat();
+    const float vmin = ui->lineEdit_vmin->text().toFloat();
+
+
+    //先生成一个新的m_customPlot_den，再填入hLayout
+    if( nullptr != m_customPlot_den)
+    {
+        delete m_customPlot_den;
+        m_customPlot_den = nullptr;
+    }
+    m_customPlot_den = new QCustomPlot();
+    //布局设置
+    // 检查g_custLayout_priWell中是否存在小部件
+    QLayoutItem* existingItem = hLayout->takeAt(0);
+    if (existingItem) {
+        QWidget* existingWidget = existingItem->widget();
+        if (existingWidget) {
+            // 删除已存在的小部件
+            delete existingWidget;
+        }
+        delete existingItem;
+    }
+    hLayout->addWidget(m_customPlot_den);
+
+    //绘制原图
+    plot_den(m_data,hLayout,vmax,vmin,m_customPlot_den,g_rectMode);
+    qDebug() << " 绘制原图完毕：" ;
+
+    QObject::connect(m_customPlot_den, &QCustomPlot::mousePress, this, &MainWindow::onMousePress);
+    QObject::connect(m_customPlot_den, &QCustomPlot::mouseMove, this, &MainWindow::onMouseMove);
+    QObject::connect(m_customPlot_den, &QCustomPlot::mouseRelease, this, &MainWindow::onMouseRelease);
 }
 
 
@@ -911,7 +949,7 @@ void MainWindow::on_pushButton_denoisePrc_clicked()
             break;
         }
         case MadFilter: {//mad滤波
-            madFilter(m_data, outPutData);
+            madFilter(m_data, outPutData, m_config.madThreshold); //3
             break;
         }
         default: {
@@ -928,25 +966,25 @@ void MainWindow::on_pushButton_denoisePrc_clicked()
     const float vmin = ui->lineEdit_vmin->text().toFloat();
 
     //问题来了，放入plot_den？--tmp
-    //先生成一个新的m_customPlot_den，再填入hLayout
-    if( nullptr != m_customPlot_den)
-    {
-            delete m_customPlot_den;
-            m_customPlot_den = nullptr;
-    }
-    m_customPlot_den = new QCustomPlot();
-    //布局设置
-    // 检查g_custLayout_priWell中是否存在小部件
-    QLayoutItem* existingItem = hLayout->takeAt(0);
-    if (existingItem) {
-            QWidget* existingWidget = existingItem->widget();
-            if (existingWidget) {
-                // 删除已存在的小部件
-                delete existingWidget;
-            }
-            delete existingItem;
-    }
-    hLayout->addWidget(m_customPlot_den);
+//    //先生成一个新的m_customPlot_den，再填入hLayout
+//    if( nullptr != m_customPlot_den)
+//    {
+//            delete m_customPlot_den;
+//            m_customPlot_den = nullptr;
+//    }
+//    m_customPlot_den = new QCustomPlot();
+//    //布局设置
+//    // 检查g_custLayout_priWell中是否存在小部件
+//    QLayoutItem* existingItem = hLayout->takeAt(0);
+//    if (existingItem) {
+//            QWidget* existingWidget = existingItem->widget();
+//            if (existingWidget) {
+//                // 删除已存在的小部件
+//                delete existingWidget;
+//            }
+//            delete existingItem;
+//    }
+//    hLayout->addWidget(m_customPlot_den);
 
     //用鼠标按下和释放去控制回到main层
     //m_customPlot_den->setCurrentLayer("main");
@@ -962,9 +1000,10 @@ void MainWindow::on_pushButton_denoisePrc_clicked()
 //    m_xrangeLow = m_customPlot_den->xAxis->range().lower;
 //    m_yrangeLow = m_customPlot_den->yAxis->range().lower;
 
-    QObject::connect(m_customPlot_den, &QCustomPlot::mousePress, this, &MainWindow::onMousePress);
-    QObject::connect(m_customPlot_den, &QCustomPlot::mouseMove, this, &MainWindow::onMouseMove);
-    QObject::connect(m_customPlot_den, &QCustomPlot::mouseRelease, this, &MainWindow::onMouseRelease);
+    //多次信号与槽函数？？？
+//    QObject::connect(m_customPlot_den, &QCustomPlot::mousePress, this, &MainWindow::onMousePress);
+//    QObject::connect(m_customPlot_den, &QCustomPlot::mouseMove, this, &MainWindow::onMouseMove);
+//    QObject::connect(m_customPlot_den, &QCustomPlot::mouseRelease, this, &MainWindow::onMouseRelease);
 
     // 连接范围变化信号到槽函数
     //QObject::connect(m_customPlot_den->xAxis, SIGNAL(rangeChanged(double, double)), this, SLOT(onXAxisRangeChanged(double, double)));
@@ -1164,5 +1203,15 @@ void MainWindow::on_pushButton_oriScale_clicked()
     if( nullptr == m_customPlot_den) return;
     m_customPlot_den->rescaleAxes();
     m_customPlot_den->replot();
+}
+
+//原始图像
+void MainWindow::on_pushButton_oriPic_clicked()
+{
+    if( nullptr == m_customPlot_den) return;
+    const float vmax = ui->lineEdit_vmax->text().toFloat();
+    const float vmin = ui->lineEdit_vmin->text().toFloat();
+    //绘制原图
+    plot_den(m_data,hLayout,vmax,vmin,m_customPlot_den,g_rectMode);
 }
 

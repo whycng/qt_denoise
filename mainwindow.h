@@ -104,6 +104,8 @@ private slots:
 
     void on_pushButton_oriScale_clicked();
 
+    void on_pushButton_oriPic_clicked();
+
 signals:
     void progressUpdate(int val);
     //void xAxisChanged(double dx, double dy);

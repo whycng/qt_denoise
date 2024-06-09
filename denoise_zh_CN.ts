@@ -20,27 +20,27 @@
 <context>
     <name>MainWindow</name>
     <message>
-        <location filename="mainwindow.cpp" line="844"/>
+        <location filename="mainwindow.cpp" line="850"/>
         <source>LAS Files (*.las);;All Files (*.*)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="846"/>
+        <location filename="mainwindow.cpp" line="852"/>
         <source>打开LAS文件</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="1073"/>
+        <location filename="mainwindow.cpp" line="1112"/>
         <source>txt file (*.txt);;all file (*)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="1077"/>
+        <location filename="mainwindow.cpp" line="1116"/>
         <source>warn</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="1077"/>
+        <location filename="mainwindow.cpp" line="1116"/>
         <source>no choose file</source>
         <translation type="unfinished"></translation>
     </message>
@@ -126,31 +126,36 @@ c.鼠标左键选择矩形框去噪
     </message>
     <message>
         <location filename="mainwindow.ui" line="184"/>
+        <source>原始图像</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="mainwindow.ui" line="191"/>
         <source>交互去噪模式</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="mainwindow.ui" line="194"/>
+        <location filename="mainwindow.ui" line="201"/>
         <source>单击交互</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="mainwindow.ui" line="201"/>
+        <location filename="mainwindow.ui" line="208"/>
         <source>去除噪声计算模式</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="mainwindow.ui" line="211"/>
+        <location filename="mainwindow.ui" line="218"/>
         <source>中心or边缘</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="mainwindow.ui" line="231"/>
+        <location filename="mainwindow.ui" line="238"/>
         <source>矩形框交互</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="mainwindow.ui" line="238"/>
+        <location filename="mainwindow.ui" line="245"/>
         <source>滑动交互</source>
         <translation type="unfinished"></translation>
     </message>

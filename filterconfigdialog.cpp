@@ -11,8 +11,8 @@ FilterConfigDialog::FilterConfigDialog(QWidget *parent)
     gaussianKernelSizeSpinBox(new QSpinBox(this)),
     waveletLevelSpinBox(new QSpinBox(this)),
     savitzkyGolayWindowSizeSpinBox(new QSpinBox(this)),
-    savitzkyGolayPolynomialOrderSpinBox(new QSpinBox(this))
-    //madThresholdSpinBox(new QDoubleSpinBox(this))
+    savitzkyGolayPolynomialOrderSpinBox(new QSpinBox(this)),
+    madThresholdSpinBox(new QDoubleSpinBox(this))
 {
 
     QVBoxLayout *layout = new QVBoxLayout(this);
@@ -24,7 +24,7 @@ FilterConfigDialog::FilterConfigDialog(QWidget *parent)
     waveletLevelSpinBox->setValue(2);//小波 --
     savitzkyGolayWindowSizeSpinBox->setValue(5);//Savitzky-Golay 滤波
     savitzkyGolayPolynomialOrderSpinBox->setValue(2);
-    //madThresholdSpinBox->setValue(1.5);//mad --
+    madThresholdSpinBox->setValue(3.0);//mad --
 
     layout->addWidget(new QLabel("Sliding Window Size:", this));
     layout->addWidget(slidingWindowSizeSpinBox);
@@ -44,8 +44,8 @@ FilterConfigDialog::FilterConfigDialog(QWidget *parent)
     layout->addWidget(new QLabel("Savitzky-Golay Polynomial Order:", this));
     layout->addWidget(savitzkyGolayPolynomialOrderSpinBox);
 
-    //layout->addWidget(new QLabel("MAD Threshold:", this));
-    //layout->addWidget(madThresholdSpinBox);
+    layout->addWidget(new QLabel("MAD Threshold:", this));
+    layout->addWidget(madThresholdSpinBox);
 
     QPushButton *okButton = new QPushButton("OK", this);
     QPushButton *cancelButton = new QPushButton("Cancel", this);
@@ -68,7 +68,7 @@ FilterConfig FilterConfigDialog::getConfig() const {
     config.zeroPhaseCoefficients = { 0.25f, 0.5f, 0.25f };  // 根据实际情况修改
     config.savitzkyGolayWindowSize = savitzkyGolayWindowSizeSpinBox->value();
     config.savitzkyGolayPolynomialOrder = savitzkyGolayPolynomialOrderSpinBox->value();
-    //config.madThreshold = madThresholdSpinBox->value();
+    config.madThreshold = madThresholdSpinBox->value();
     return config;
 }
 

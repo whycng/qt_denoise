@@ -61,9 +61,10 @@ void wavelet3(const std::vector<std::vector<float>>& data,
 std::vector<std::vector<double>> convertData(const std::vector<std::vector<float>>& data);
 // MAD-based outlier detection and replace with median
 void madFilter(const std::vector<std::vector<float>>& input,
-               std::vector<std::vector<float>>& output) ;
+               std::vector<std::vector<float>>& output,
+               const float& shorld) ;
 // Helper functions
-float medianHelp(std::vector<float>& data);
+float medianHelp(std::vector<float> data);
 // Savitzky-Golay·¨a[0] -> 1/35 (-3 x[-2] + 12 x[-1] + 17 x[0] + 12 x[1] - 3 x[2])
 void applySavitzkyGolay(const std::vector<std::vector<float>>& input,
                         std::vector<std::vector<float>>& output,

@@ -576,7 +576,70 @@ void applySavitzkyGolay(const std::vector<std::vector<float>>& input,
     }
 }
 
-float medianHelp(std::vector<float>& data) {
+//按行
+//// 计算中位数的辅助函数
+//float medianHelp(std::vector<float> data) {
+//    size_t size = data.size();
+//    if (size == 0) return 0.0;
+//    std::sort(data.begin(), data.end());
+//    if (size % 2 == 0) {
+//        return (data[size / 2 - 1] + data[size / 2]) / 2.0;
+//    } else {
+//        return data[size / 2];
+//    }
+//}
+
+//// MAD 过滤函数
+//void madFilter(const std::vector<std::vector<float>>& input, std::vector<std::vector<float>>& output, const float& thresholdMultiplier ) {
+//    int rows = input.size();
+//    if (rows == 0) return;
+//    int cols = input[0].size();
+
+//    // 初始化 output 的大小
+//    output.resize(rows, std::vector<float>(cols, 0.0f));
+
+//    std::vector<float> rowData(cols), absDeviations(cols);
+
+//    for (int row = 0; row < rows; ++row) {
+//        // 提取行数据到向量中
+//        for (int col = 0; col < cols; ++col) {
+//            rowData[col] = input[row][col];
+//        }
+
+//        float rowMedian = medianHelp(rowData);
+
+//        // 计算偏离中位数的绝对偏差
+//        for (int i = 0; i < cols; ++i) {
+//            absDeviations[i] = std::fabs(rowData[i] - rowMedian);
+//        }
+
+//        float mad = medianHelp(absDeviations);
+//        float threshold = thresholdMultiplier * mad;
+
+//        // 调试输出：中位数和MAD
+//        // std::cout << "Row: " << row << ", Median: " << rowMedian << ", MAD: " << mad << ", Threshold: " << threshold << std::endl;
+
+//        // 过滤离群值
+//        for (int i = 0; i < cols; ++i) {
+//            // std::cout << "i:" << i << " rowData[i]" << rowData[i] << std::endl;
+//            if (std::fabs(rowData[i] - rowMedian) > threshold) {
+//                output[row][i] = rowMedian; // 用行中位数替换离群值
+//            } else {
+//                output[row][i] = input[row][i];
+//            }
+
+//            // 调试输出：每个元素的处理情况
+//            // std::cout << "Row: " << row << ", Col: " << i << ", Value: " << input[row][i]
+//            //           << ", rowData[i]:" << rowData[i]
+//            //           << ", Deviation: " << std::fabs(rowData[i] - rowMedian) << ", Output: " << output[row][i] << std::endl;
+//        }
+//    }
+//}
+
+
+//按列处理
+// 计算中位数的辅助函数
+float medianHelp(std::vector<float> data) {
     size_t size = data.size();
     if (size == 0) return 0.0;
     std::sort(data.begin(), data.end());
@@ -587,7 +650,10 @@ float medianHelp(std::vector<float>& data) {
     }
 }
 
-void madFilter(const std::vector<std::vector<float>>& input, std::vector<std::vector<float>>& output) {
+// MAD 过滤函数
+void madFilter(const std::vector<std::vector<float>>& input,
+               std::vector<std::vector<float>>& output,
+               const float& shorld) {
     int rows = input.size();
     if (rows == 0) return;
     int cols = input[0].size();
@@ -605,24 +671,85 @@ void madFilter(const std::vector<std::vector<float>>& input, std::vector<std::ve
 
         float colMedian = medianHelp(colData);
 
+
         // 计算偏离中位数的绝对偏差
         for (int i = 0; i < rows; ++i) {
             absDeviations[i] = std::fabs(colData[i] - colMedian);
         }
 
         float mad = medianHelp(absDeviations);
-        float threshold = 3 * mad;
+        float threshold = shorld * mad;
+
+        // 调试输出：中位数和MAD
+        //std::cout << "Column: " << col << ", Median: " << colMedian << ", MAD: " << mad << ", Threshold: " << threshold << std::endl;
 
         // 过滤离群值
         for (int i = 0; i < rows; ++i) {
-            if (absDeviations[i] > threshold) {
+            //std::cout << "i:" << i << " colData[i]" << colData[i] << std::endl;
+            if (std::fabs(colData[i] - colMedian) > threshold) {
                 output[i][col] = colMedian; // 用列中位数替换离群值
             } else {
                 output[i][col] = input[i][col];
             }
+
+            // 调试输出：每个元素的处理情况
+            //std::cout << "Row: " << i << ", Col: " << col << ", Value: " << input[i][col]
+            //          << ", colData[i]:" << colData[i]
+            //         << ", Deviation: " << std::fabs(colData[i] - colMedian) << ", Output: " << output[i][col] << std::endl;
         }
     }
 }
+
+
+//float medianHelp(std::vector<float>& data) {
+//    size_t size = data.size();
+//    if (size == 0) return 0.0;
+//    std::sort(data.begin(), data.end());
+//    if (size % 2 == 0) {
+//        return (data[size / 2 - 1] + data[size / 2]) / 2.0;
+//    } else {
+//        return data[size / 2];
+//    }
+//}
+
+//void madFilter(const std::vector<std::vector<float>>& input, std::vector<std::vector<float>>& output) {
+//    int rows = input.size();
+//    if (rows == 0) return;
+//    int cols = input[0].size();
+
+//    // 初始化 output 的大小
+//    output.resize(rows, std::vector<float>(cols, 0.0f));
+
+//    std::vector<float> colData(rows), absDeviations(rows);
+
+//    for (int col = 0; col < cols; ++col) {
+//        // 提取列数据到向量中
+//        for (int row = 0; row < rows; ++row) {
+//            colData[row] = input[row][col];
+//        }
+
+//        float colMedian = medianHelp(colData);
+
+//        // 计算偏离中位数的绝对偏差
+//        for (int i = 0; i < rows; ++i) {
+//            absDeviations[i] = std::fabs(colData[i] - colMedian);
+//        }
+
+//        float mad = medianHelp(absDeviations);
+//        float threshold = 3 * mad;
+
+//        // 过滤离群值
+//        for (int i = 0; i < rows; ++i) {
+//            if (absDeviations[i] > threshold) {
+//                output[i][col] = colMedian; // 用列中位数替换离群值
+//            } else {
+//                output[i][col] = input[i][col];
+//            }
+//        }
+//    }
+//}
+
+
 
 
 
