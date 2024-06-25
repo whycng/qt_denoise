@@ -137,6 +137,20 @@ void MainWindow::plot_den(const std::vector<std::vector<float>>& outData,QHBoxLa
 
     const int row = outData.size();
     const int col = outData.at(0).size();
+
+    // 检查并删除旧的 QCPColorMap 对象
+    if (m_colorMap != nullptr)
+    {
+        //qDebug() << " m_colorMap != nullptr";
+        m_customPlot_den->removePlottable(m_colorMap);
+        //delete m_colorMap;
+        m_colorMap = nullptr;
+    }
+    else
+    {
+        //qDebug() << " m_colorMap == nullptr";
+    }
+
     QCPColorMap* colorMap = new QCPColorMap(customPlot_den->xAxis, customPlot_den->yAxis);
     m_colorMap = colorMap;
 
@@ -212,6 +226,7 @@ void MainWindow::denoiseDataInCircle(QPoint mousePos) {
 
     const double scaleX = xrange/m_xrange;
     const float radius = ui->lineEdit_radius->text().toFloat() * scaleX;
+    qDebug() << " scaleX:" << scaleX << "    radius:" << radius;
 
     //qDebug() << " xMin:" << xMin << " xMax:" << xMax << " xStep:" << xStep;
 
@@ -591,6 +606,7 @@ void MainWindow::updateRedCircle() {
 
 //鼠标按下事件处理
 void MainWindow::onMousePress(QMouseEvent *event) {
+    if( true == isOriPic) return;//原始图像直接返回
     const float vmax = ui->lineEdit_vmax->text().toFloat();
     const float vmin = ui->lineEdit_vmin->text().toFloat();
     if (event->button() == Qt::RightButton) { //鼠标右键
@@ -653,7 +669,7 @@ void MainWindow::onMousePress(QMouseEvent *event) {
 
 //鼠标移动事件处理
 void MainWindow::onMouseMove(QMouseEvent *event) {
-
+    if( true == isOriPic) return;//原始图像直接返回
     //m_selecting决定了是否选中了滑动交互
     if (m_selecting && event->buttons() & Qt::RightButton) {
         m_endPoint = event->pos();
@@ -669,7 +685,7 @@ void MainWindow::onMouseMove(QMouseEvent *event) {
             denoiseDataSlideCircle(event->pos());
         }
     }
-    if (event->buttons() & Qt::LeftButton && g_rectMode ) // 鼠标左键
+    if (event->buttons() & Qt::LeftButton && g_rectMode ) // 鼠标左键 - 矩形框
     {
         dragEndPoint = event->pos();
         // 更新 selectionRect
@@ -682,7 +698,7 @@ void MainWindow::onMouseMove(QMouseEvent *event) {
 
 //鼠标释放事件处理
 void MainWindow::onMouseRelease(QMouseEvent *event) {
-
+    if( true == isOriPic) return;//原始图像直接返回
     const float vmax = ui->lineEdit_vmax->text().toFloat();
     const float vmin = ui->lineEdit_vmin->text().toFloat();
 
@@ -737,7 +753,7 @@ void MainWindow::onMouseRelease(QMouseEvent *event) {
         //绘制
         plot_den(m_outPutData,hLayout,vmax,vmin,m_customPlot_den,g_rectMode);
     }
-    if (event->button() == Qt::LeftButton && g_rectMode ) // 鼠标左键
+    if (event->button() == Qt::LeftButton && g_rectMode ) // 鼠标左键 - 矩形框
     {
         isDragging = false;
         dragEndPoint = event->pos();
@@ -883,8 +899,19 @@ void MainWindow::on_pushButton_readData_clicked()
     const float vmax = ui->lineEdit_vmax->text().toFloat();
     const float vmin = ui->lineEdit_vmin->text().toFloat();
 
+    //怎么改...
+//    if (m_colorMap != nullptr)
+//    {
+//        // 从 QCustomPlot 中移除 m_colorMap
+//        m_customPlot_den->removePlottable(m_colorMap);
 
-    //先生成一个新的m_customPlot_den，再填入hLayout
+//        // 删除 m_colorMap 对象
+//        delete m_colorMap;
+//        m_colorMap = nullptr; // 避免悬空指针
+//    }
+
+    //没有必要
+    //先生成一个新的 m_customPlot_den，再填入hLayout
     if( nullptr != m_customPlot_den)
     {
         delete m_customPlot_den;
@@ -1016,7 +1043,7 @@ void MainWindow::on_pushButton_denoisePrc_clicked()
     //QObject::connect(m_customPlot_den, &QCustomPlot::xAxisChanged, this, &MainWindow::updateTranslationOffset);
     //QObject::connect(m_customPlot_den, &QCustomPlot::yAxisChanged, this, &MainWindow::updateTranslationOffset);
 
-
+    isOriPic = false;
 }
 
 
@@ -1077,6 +1104,10 @@ void MainWindow::on_pushButton_back_clicked()
 
     // 移除最后一个元素
     g_BackVal.pop_back();
+    qDebug() << "<上一步> g_BackVal.size:" << g_BackVal.size()
+             << " g_slidIndices.size:" << g_slidIndices.size()
+             <<" g_slidValues.size():" << g_slidValues.size()
+             << " g_recentVal.size():" << g_recentVal.size();
 
 }
 
@@ -1114,7 +1145,7 @@ void MainWindow::on_pushButton_saveData_clicked()
 
     // 检查用户是否取消了文件选择
     if (fileNameLas.isEmpty()) {
-        QMessageBox::warning(this, tr("warn"), tr("no choose file"));
+        //QMessageBox::warning(this, tr("warn"), tr("no choose file"));
         return;
     }
 
@@ -1214,5 +1245,7 @@ void MainWindow::on_pushButton_oriPic_clicked()
     const float vmin = ui->lineEdit_vmin->text().toFloat();
     //绘制原图
     plot_den(m_data,hLayout,vmax,vmin,m_customPlot_den,g_rectMode);
+    //当前为原始图像
+    isOriPic = true;
 }
 

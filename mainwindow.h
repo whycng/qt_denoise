@@ -40,6 +40,7 @@ public:
 
 
 private:
+    bool isOriPic = true;
     void updateRedCircle() ;
     void denoiseDataInCircle(QPoint mousePos);
     void denoiseDataSlideCircle(QPoint mousePos);
