@@ -30,8 +30,10 @@ class FilterConfigDialog : public QDialog {
 public:
     explicit FilterConfigDialog(QWidget *parent = nullptr);
     FilterConfig getConfig() const;
+    void setConfig(const FilterConfig& config);
 
 private:
+    FilterConfig m_config;
     QSpinBox *slidingWindowSizeSpinBox;
     QSpinBox *medianWindowSizeSpinBox;
     QSpinBox *gaussianKernelSizeSpinBox;

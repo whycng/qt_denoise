@@ -12,19 +12,19 @@ FilterConfigDialog::FilterConfigDialog(QWidget *parent)
     waveletLevelSpinBox(new QSpinBox(this)),
     savitzkyGolayWindowSizeSpinBox(new QSpinBox(this)),
     savitzkyGolayPolynomialOrderSpinBox(new QSpinBox(this)),
-    madThresholdSpinBox(new QDoubleSpinBox(this))
+    madThresholdSpinBox(new QDoubleSpinBox(this) )
 {
 
     QVBoxLayout *layout = new QVBoxLayout(this);
 
-    // 设置初始值
-    slidingWindowSizeSpinBox->setValue(3);//滑动平均法滤波
-    medianWindowSizeSpinBox->setValue(5);//中值滤波
-    gaussianKernelSizeSpinBox->setValue(5);//高斯滤波
-    waveletLevelSpinBox->setValue(2);//小波 --
-    savitzkyGolayWindowSizeSpinBox->setValue(5);//Savitzky-Golay 滤波
-    savitzkyGolayPolynomialOrderSpinBox->setValue(2);
-    madThresholdSpinBox->setValue(3.0);//mad --
+    // 设置初始值  不写在构造函数里...
+//    slidingWindowSizeSpinBox->setValue(3);//滑动平均法滤波
+//    medianWindowSizeSpinBox->setValue(5);//中值滤波
+//    gaussianKernelSizeSpinBox->setValue(5);//高斯滤波
+//    waveletLevelSpinBox->setValue(2);//小波 --
+//    savitzkyGolayWindowSizeSpinBox->setValue(5);//Savitzky-Golay 滤波
+//    savitzkyGolayPolynomialOrderSpinBox->setValue(2);
+//    madThresholdSpinBox->setValue(3.0);//mad --
 
     layout->addWidget(new QLabel("Sliding Window Size:", this));
     layout->addWidget(slidingWindowSizeSpinBox);
@@ -72,6 +72,17 @@ FilterConfig FilterConfigDialog::getConfig() const {
     return config;
 }
 
+void  FilterConfigDialog::setConfig(const FilterConfig& config)  {
+    m_config = config;
+    slidingWindowSizeSpinBox->setValue(m_config.slidingWindowSize);//滑动平均法滤波
+    medianWindowSizeSpinBox->setValue(m_config.medianWindowSize);//中值滤波
+    gaussianKernelSizeSpinBox->setValue(m_config.gaussianKernelSize);//高斯滤波
+    waveletLevelSpinBox->setValue(m_config.waveletLevel);//小波 --
+    savitzkyGolayWindowSizeSpinBox->setValue(m_config.savitzkyGolayWindowSize);//Savitzky-Golay 滤波
+    savitzkyGolayPolynomialOrderSpinBox->setValue(m_config.savitzkyGolayPolynomialOrder);
+    madThresholdSpinBox->setValue(m_config.madThreshold);//mad --
+
+}
 
 
 

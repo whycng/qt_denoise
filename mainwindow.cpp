@@ -37,7 +37,7 @@ MainWindow::MainWindow(QWidget *parent)
     m_config.slidingWindowSize = 3;//滑动滤波，窗口大小
     m_config.medianWindowSize = 5;//中值滤波，窗口
     m_config.gaussianKernelSize = 5;//高斯滤波，窗口
-    m_config.waveletLevel = 4;//小波，窗口
+    m_config.waveletLevel = 2;//小波，窗口
     m_config.zeroPhaseCoefficients = { 0.25f, 0.5f, 0.25f };//零相位滤波
     m_config.savitzkyGolayWindowSize = 5;//savitzkyGolay
     m_config.savitzkyGolayPolynomialOrder = 2 ;//savitzkyGolay
@@ -1084,6 +1084,7 @@ void MainWindow::on_pushButton_back_clicked()
 void MainWindow::on_pushButton_settings_clicked()
 {
     FilterConfigDialog dialog(this);
+    dialog.setConfig(m_config);
     if (dialog.exec() == QDialog::Accepted) {
         m_config = dialog.getConfig();
         //config.print();  // 打印 config 内容以便调试
