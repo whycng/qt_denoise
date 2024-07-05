@@ -20,17 +20,17 @@
 <context>
     <name>MainWindow</name>
     <message>
-        <location filename="mainwindow.cpp" line="866"/>
+        <location filename="mainwindow.cpp" line="907"/>
         <source>LAS Files (*.las);;All Files (*.*)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="868"/>
+        <location filename="mainwindow.cpp" line="909"/>
         <source>打开LAS文件</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="1144"/>
+        <location filename="mainwindow.cpp" line="1186"/>
         <source>txt file (*.txt);;all file (*)</source>
         <translation type="unfinished"></translation>
     </message>

@@ -137,6 +137,7 @@ void MainWindow::plot_den(const std::vector<std::vector<float>>& outData,QHBoxLa
 
     const int row = outData.size();
     const int col = outData.at(0).size();
+    qDebug() << "<plot_den> row:" << row << " col:" << col;
 
     // 检查并删除旧的 QCPColorMap 对象
     if (m_colorMap != nullptr)
@@ -155,6 +156,8 @@ void MainWindow::plot_den(const std::vector<std::vector<float>>& outData,QHBoxLa
     m_colorMap = colorMap;
 
     colorMap->data()->setSize(row, col);
+    colorMap->data()->setRange(QCPRange(0, row),
+                               QCPRange(0 , col));
     for (int i = 0  ; i < row; ++i )
     {
         for (int j = 0; j < col; ++j)
@@ -171,6 +174,37 @@ void MainWindow::plot_den(const std::vector<std::vector<float>>& outData,QHBoxLa
     // 设置颜色映射的上下限
     colorMap->setDataRange(QCPRange(vmin, vmax));
 
+//    // 打印横坐标范围
+//    QCPRange xRange = customPlot_den->xAxis->range();
+//    qDebug() << "X Axis Range: " << xRange.lower << " to " << xRange.upper;
+//    // 打印纵坐标范围
+//    QCPRange yRange = customPlot_den->yAxis->range();
+//    qDebug() << "Y Axis Range: " << yRange.lower << " to " << yRange.upper;
+
+
+    if( is_denoise_buton == false)//如果点击的不是执行去噪按钮
+    {
+        qDebug() << "设置 范围";
+        // 恢复之前保存的轴范围
+        customPlot_den->xAxis->setRange(m_currentXRange);
+        customPlot_den->yAxis->setRange(m_currentYRange);
+        qDebug() << "Current X Axis Range: " << m_currentXRange.lower << " to " << m_currentXRange.upper;
+        qDebug() << "Current Y Axis Range: " << m_currentYRange.lower << " to " << m_currentYRange.upper;
+
+    }
+    else
+    {
+        qDebug() << "不   设置 范围";
+        is_denoise_buton = false;
+        // 设置横坐标范围
+        customPlot_den->xAxis->setRange(0, col* 2);
+        // 设置纵坐标范围
+        customPlot_den->yAxis->setRange(0, col );
+    }
+
+
+
+
     //customPlot_den->xAxis->setLabel(" "); // 设置横坐标标签
     //customPlot_den->yAxis->setLabel(" "); // 设置纵坐标标签
     //customPlot_den->yAxis->setRangeReversed(true);// 设置纵坐标反向
@@ -178,6 +212,8 @@ void MainWindow::plot_den(const std::vector<std::vector<float>>& outData,QHBoxLa
     //customPlot_priW_den->legend->setVisible(true); // 显示图例
     //customPlot_den->rescaleAxes();
     customPlot_den->replot();
+
+
 
     //交互方式
     if( true == rectMode)
@@ -609,6 +645,11 @@ void MainWindow::onMousePress(QMouseEvent *event) {
     if( true == isOriPic) return;//原始图像直接返回
     const float vmax = ui->lineEdit_vmax->text().toFloat();
     const float vmin = ui->lineEdit_vmin->text().toFloat();
+
+    // 保存当前的轴范围
+    m_currentXRange = m_customPlot_den->xAxis->range();
+    m_currentYRange = m_customPlot_den->yAxis->range();
+
     if (event->button() == Qt::RightButton) { //鼠标右键
         //如果勾选了鼠标右键单击去噪模式，则执行
         if( Qt::Checked == ui->checkBox_rightClick->checkState())
@@ -1016,6 +1057,7 @@ void MainWindow::on_pushButton_denoisePrc_clicked()
     //用鼠标按下和释放去控制回到main层
     //m_customPlot_den->setCurrentLayer("main");
     //绘制
+    is_denoise_buton = true;
     plot_den(outPutData,hLayout,vmax,vmin,m_customPlot_den,g_rectMode);
     m_outPutData = outPutData;
     //记录当前尺寸
@@ -1195,6 +1237,12 @@ void MainWindow::on_pushButton_savePic_clicked()
         // 设置目标图像大小
         QSize desiredSize(xcale, ycale);
 
+
+        //为了保存全部大小
+        // 设置新的坐标轴范围以包含整个数据范围
+        m_customPlot_den->xAxis->setRange(0, m_data.size()); // col 是你的数据的列数
+        m_customPlot_den->yAxis->setRange(0, m_data.at(0).size() ); // row 是你的数据的行数
+
         // 渲染 QCustomPlot 到 QPixmap
         QPixmap originalPixmap = m_customPlot_den->toPixmap(desiredSize.width(), desiredSize.height());
 
@@ -1210,6 +1258,10 @@ void MainWindow::on_pushButton_savePic_clicked()
         {
             qDebug() << "Failed to save image at" << fullPath;
         }
+
+        // 恢复原来的坐标轴范围
+        m_customPlot_den->xAxis->setRange(m_currentXRange);
+        m_customPlot_den->yAxis->setRange(m_currentYRange);
     }
 }
 

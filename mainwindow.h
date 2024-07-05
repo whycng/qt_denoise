@@ -40,6 +40,7 @@ public:
 
 
 private:
+    bool is_denoise_buton = true;
     bool isOriPic = true;
     void updateRedCircle() ;
     void denoiseDataInCircle(QPoint mousePos);
@@ -47,6 +48,9 @@ private:
     void applyFilterToSelection( const double& xCoordLB,const double& yCoordLB,
                                  const double& xCoordRT,const double& yCoordRT);
     std::vector<std::vector<float>> readLasFile(const std::string& filePath);
+    // 保存当前的轴范围
+    QCPRange m_currentXRange ;
+    QCPRange m_currentYRange ;
 private slots:
 
     void onProgressUpdate(int val);
